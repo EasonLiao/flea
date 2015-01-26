@@ -3,6 +3,7 @@ package main
 import (
   "fmt"
   "github.com/easonliao/flea/builtin"
+  "github.com/easonliao/flea/setup"
   "log"
   "os"
   "strings"
@@ -22,13 +23,17 @@ type cmdStruct struct {
 }
 
 var commandsTable = map[string]cmdStruct {
-  "init" : {fun : builtin.CmdInit, flag : flagNeedSetup},
+  "init" : {fun : builtin.CmdInit},
+  "hash-object" : {fun : builtin.CmdHashObject, flag : flagNeedSetup},
 }
 
 func runBuiltin(cmd string) {
   if cmdSt, ok := commandsTable[cmd]; !ok {
     log.Fatal("Unkown command")
   } else {
+    if cmdSt.flag & flagNeedSetup != 0 {
+      setup.SetupFleaDir()
+    }
     cmdSt.fun()
   }
 }
