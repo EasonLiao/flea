@@ -19,7 +19,7 @@ func TestStore(t *testing.T) {
   if err != nil {
     t.Error("error:", err.Error)
   }
-  if name != toString(hash1[:]) {
+  if name != hashToString(hash1[:]) {
     t.Error("Names don't match")
   }
   if fileType != Blob {

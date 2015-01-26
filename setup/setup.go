@@ -1,6 +1,7 @@
 package setup
 
 import (
+  "github.com/easonliao/flea/store"
   "log"
   "os"
   "path"
@@ -14,12 +15,9 @@ func SetupFleaDir() {
   if err != nil {
     log.Fatal("Failed in getting current directory.")
   }
-
   // Find flea directory.
   curDir := cwd
-
   for {
-    log.Println("curDir : ", curDir)
     if _, err := os.Stat(path.Join(curDir, ".flea")); err != nil {
       prevDir := curDir
       curDir = path.Dir(curDir)
@@ -32,6 +30,7 @@ func SetupFleaDir() {
       break
     }
   }
+  store.InitStoreDir(path.Join(FleaDir, "objects"))
 }
 
 func AssertIsSetup() {

@@ -89,7 +89,7 @@ func GetFileName(hashPrefix []byte) (names []string, err error) {
     return
   }
   names = make([]string, 0, 1)
-  hashString := toString(hashPrefix)
+  hashString := hashToString(hashPrefix)
   walkFun := func(path string, info os.FileInfo, err error) error {
     if info.IsDir() && path != storeDir {
       return filepath.SkipDir
@@ -109,7 +109,7 @@ func GetFileName(hashPrefix []byte) (names []string, err error) {
 
 func store(data []byte) (hash [20]byte) {
   hash = sha1.Sum(data)
-  hashString := toString(hash[:])
+  hashString := hashToString(hash[:])
   fileName := path.Join(storeDir, hashString)
   if _, err := os.Stat(fileName); err == nil {
     // File already exists, verifying whether the data should match.
@@ -134,6 +134,6 @@ func assertDirInit() {
 }
 
 // Convert binary hash to readable hex string.
-func toString(hash []byte) string {
-  return fmt.Sprint("%s", hash)
+func hashToString(hash []byte) string {
+  return fmt.Sprintf("%x", hash)
 }
