@@ -25,6 +25,7 @@ type cmdStruct struct {
 var commandsTable = map[string]cmdStruct {
   "init" : {fun : builtin.CmdInit},
   "hash-object" : {fun : builtin.CmdHashObject, flag : flagNeedSetup},
+  "cat-file" : {fun : builtin.CmdCatFile, flag : flagNeedSetup},
 }
 
 func runBuiltin(cmd string) {
