@@ -2,6 +2,8 @@ package store
 
 import (
   "bytes"
+  "encoding/hex"
+  //"log"
   "os"
   "testing"
 )
@@ -19,10 +21,10 @@ func TestStore(t *testing.T) {
   if err != nil {
     t.Error("error:", err.Error)
   }
-  if name != hashToString(hash1[:]) {
+  if name != hex.EncodeToString(hash1[:]) {
     t.Error("Names don't match")
   }
-  if fileType != Blob {
+  if fileType != BlobType {
     t.Error("Invalid type")
   }
   if bytes.Compare(data, content) != 0 {

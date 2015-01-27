@@ -4,10 +4,9 @@ package store
 import (
   "bytes"
   "crypto/sha1"
+  "encoding/hex"
   "errors"
-  "fmt"
   "io/ioutil"
-  "log"
   "os"
   "path"
   "path/filepath"
@@ -23,12 +22,13 @@ var (
   ErrHashTooShort = errors.New("store: hash value is too short(more than one files match)")
   ErrNotValidHash = errors.New("store: not valid hash value")
   ErrFileCorrupted = errors.New("store: file corrupted")
+  ErrInvalidType = errors.New("store: invalid file type")
 )
 
 const (
-  Blob = "blob"
-  Tree = "tree"
-  Commit = "commit"
+  BlobType = "blob"
+  TreeType = "tree"
+  CommitType = "commit"
 )
 
 const hashSize = 20
@@ -42,15 +42,28 @@ func GetStoreDir() string {
   return storeDir
 }
 
-func StoreBlob(data []byte) [20]byte {
-  assertDirInit()
+func WrapData(fileType string, data []byte) (hash [hashSize]byte, blob []byte, err error) {
+  if fileType != BlobType && fileType != TreeType && fileType != CommitType {
+    err =  ErrInvalidType
+    return
+  }
   var buffer bytes.Buffer
-  buffer.WriteString(string(Blob))
+  buffer.WriteString(fileType)
   buffer.WriteString(" ")
   buffer.WriteString(strconv.Itoa(len(data)))
   buffer.WriteByte(0)
   buffer.Write(data)
-  return store(buffer.Bytes())
+  blob = buffer.Bytes()
+  hash = sha1.Sum(blob)
+  return
+}
+
+func StoreBlob(data []byte) [20]byte {
+  assertDirInit()
+  hash, blob, _ := WrapData(BlobType, data)
+  fileName := hex.EncodeToString(hash[:])
+  ioutil.WriteFile(filepath.Join(storeDir, fileName), blob, 0444)
+  return hash
 }
 
 // Returns the type and data of the file based on the hash prefix.
@@ -89,7 +102,7 @@ func GetFileName(hashPrefix []byte) (names []string, err error) {
     return
   }
   names = make([]string, 0, 1)
-  hashString := hashToString(hashPrefix)
+  hashString := hex.EncodeToString(hashPrefix)
   walkFun := func(path string, info os.FileInfo, err error) error {
     if info.IsDir() && path != storeDir {
       return filepath.SkipDir
@@ -107,33 +120,8 @@ func GetFileName(hashPrefix []byte) (names []string, err error) {
   return
 }
 
-func store(data []byte) (hash [20]byte) {
-  hash = sha1.Sum(data)
-  hashString := hashToString(hash[:])
-  fileName := path.Join(storeDir, hashString)
-  if _, err := os.Stat(fileName); err == nil {
-    // File already exists, verifying whether the data should match.
-    if content, err := ioutil.ReadFile(fileName); err != nil {
-      log.Fatalf("Failed to read file %s", fileName)
-    } else if bytes.Compare(data, content) != 0 {
-      log.Fatalf("Contents doesn't match, file has been corrupted?")
-    }
-    return
-  }
-  err := ioutil.WriteFile(fileName, data, 0444)
-  if err != nil {
-    log.Fatalf("Failed in writing object file to %s.", fileName)
-  }
-  return
-}
-
 func assertDirInit() {
   if !isDirInit {
     panic("Dir has not been initialized.")
   }
-}
-
-// Convert binary hash to readable hex string.
-func hashToString(hash []byte) string {
-  return fmt.Sprintf("%x", hash)
 }

@@ -16,7 +16,6 @@ func CmdHashObject() int {
   flags.Parse(os.Args[2:])
   data, err := ioutil.ReadAll(os.Stdin)
   // Trim the last character (EOF)?
-  data = data[:len(data) - 1]
   if err != nil {
     log.Fatal(err)
   }
