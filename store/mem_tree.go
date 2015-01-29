@@ -1,6 +1,7 @@
 package store
 
 import (
+  "encoding/json"
   "path/filepath"
   "strings"
 )
@@ -133,9 +134,54 @@ func (mt *MemTree) Delete(path string) (err error) {
   return
 }
 
+// Serializes the MemTree to byte array.
+func (mt *MemTree) Serialize() ([]byte, error) {
+  type tuple struct {
+    Path string `json:path`
+    Hash []byte `json:hash`
+  }
+  nodes := make([]tuple, 0)
+  traverseFn := func(path string, node Node) error {
+    if node.IsDir() {
+      nodes = append(nodes, tuple{path, nil})
+    } else {
+      nodes = append(nodes, tuple{path, node.GetHashValue()})
+    }
+    return nil
+  }
+  mt.Traverse(traverseFn)
+  data, err := json.Marshal(nodes)
+  if err != nil {
+    return nil, err
+  }
+  return data, nil
+}
+
 // Creates a MemTree.
 func NewMemTree() *MemTree {
   return &MemTree{newDirMemTreeNode()}
+}
+
+// Deserializes the byte array to MemTree.
+func Deserialize(data []byte) (*MemTree, error) {
+  type tuple struct {
+    Path string `json:path`
+    Hash []byte `json:hash`
+  }
+  nodes := make([]tuple, 0)
+  err := json.Unmarshal(data, &nodes)
+  if err != nil {
+    return nil, err
+  }
+  tree := NewMemTree()
+  for _, t := range(nodes) {
+    if t.Hash != nil {
+      tree.MkFile(t.Path, t.Hash)
+    } else {
+      tree.MkDir(t.Path)
+    }
+  }
+  return tree, nil
 }
 
 // Apply an operation to node of the given path. This is the primitive used by other

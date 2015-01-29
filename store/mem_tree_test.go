@@ -227,3 +227,24 @@ func TestCompareTrees2(t *testing.T) {
     t.Error("Incorrect test result")
   }
 }
+
+func TestSerialization(t *testing.T) {
+  tree := NewMemTree()
+  tree.MkFile("/foo",  generateRandomHash())
+  tree.MkDir("/dir")
+  tree.MkFile("/dir/foo1", generateRandomHash())
+  tree.MkFile("/dir/foo2", generateRandomHash())
+
+  data, err := tree.Serialize()
+  if err != nil {
+    t.Error("Error found in serialization of MemTree.")
+  }
+  newtree, err := Deserialize(data)
+  if err != nil {
+    t.Error("Error found in deserialization of MemTree.")
+  }
+  m1, m2, diffes := CompareTrees(tree, newtree)
+  if len(m1) != 0 || len(m2) != 0 || len(diffes) != 0 {
+    t.Error("Inconsistency after serialization/deserialization.")
+  }
+}
