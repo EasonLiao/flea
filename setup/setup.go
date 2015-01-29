@@ -1,7 +1,7 @@
 package setup
 
 import (
-  "github.com/easonliao/flea/store"
+  "github.com/easonliao/flea/core"
   "log"
   "os"
   "path"
@@ -30,7 +30,7 @@ func SetupFleaDir() {
       break
     }
   }
-  store.InitStoreDir(path.Join(FleaDir, "objects"))
+  core.InitStoreDir(path.Join(FleaDir, "objects"))
 }
 
 func AssertIsSetup() {

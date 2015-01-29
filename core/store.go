@@ -1,5 +1,5 @@
-// Content addressable store.
-package store
+// Core implementations of Flea.
+package core
 
 import (
   "bytes"

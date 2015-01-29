@@ -3,7 +3,7 @@ package builtin
 import (
   "flag"
   "fmt"
-  "github.com/easonliao/flea/store"
+  "github.com/easonliao/flea/core"
   "io/ioutil"
   "log"
   "os"
@@ -19,7 +19,7 @@ func CmdHashObject() int {
   if err != nil {
     log.Fatal(err)
   }
-  hash := store.StoreBlob(data)
+  hash := core.StoreBlob(data)
   fmt.Printf("%x\n", hash)
   return 0
 }

@@ -4,7 +4,7 @@ import (
   "encoding/hex"
   "flag"
   "fmt"
-  "github.com/easonliao/flea/store"
+  "github.com/easonliao/flea/core"
   "log"
   "os"
 )
@@ -21,7 +21,7 @@ func CmdCatFile() int {
   if err != nil {
     log.Fatal("Invalid hash values.")
   }
-  _, fileType, data, err := store.Get(hash)
+  _, fileType, data, err := core.Get(hash)
   if err != nil {
     log.Fatal(err)
   }
