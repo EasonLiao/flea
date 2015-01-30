@@ -3,12 +3,12 @@ package core
 import (
   "bytes"
   "encoding/hex"
-  "os"
   "testing"
 )
 
 func TestStore(t *testing.T) {
-  store := newCAStore(os.TempDir())
+  dir, _ := mkDir("ca_store")
+  store := newCAStore(dir)
   data := []byte("what is up, doc?")
   hash1, _ := store.StoreBlob(data)
   hash2, _ := store.StoreBlob(data)

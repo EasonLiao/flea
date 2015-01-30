@@ -1,15 +1,13 @@
 package core
 
 import (
-  "fmt"
-  "os"
   "path/filepath"
   "testing"
-  "time"
 )
 
 func TestIndexTree(t *testing.T) {
-  file := filepath.Join(os.TempDir(), fmt.Sprintf("index%s", time.Now().Local()))
+  dir, _ := mkDir("index_tree_test")
+  file := filepath.Join(dir, "index")
   tree, _ := newIndexTree(file)
   tree.MkDir("/foo1")
   tree.MkDir("/foo2")
