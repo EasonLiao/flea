@@ -12,7 +12,7 @@ var fsTree *FsTree
 // directory. It's also read-only.
 type FsTree struct {
   baseFsPath string
-  cache map[string]*FsNode
+  cache map[string]*FsTreeNode
 }
 
 // Gets the singleton FsTree.
@@ -25,7 +25,7 @@ func GetFsTree() *FsTree {
 
 // Constructs a FsTree with the given path directory.
 func newFsTree(fsPath string) *FsTree {
-  tree := &FsTree{baseFsPath :fsPath, cache : make(map[string]*FsNode)}
+  tree := &FsTree{baseFsPath :fsPath, cache : make(map[string]*FsTreeNode)}
   return tree
 }
 
@@ -70,16 +70,16 @@ func (ft *FsTree) Traverse(fn VisitFn) error {
   return filepath.Walk(ft.baseFsPath, walkFn)
 }
 
-type FsNode struct {
+type FsTreeNode struct {
   fsPath string
   hash []byte
 }
 
-func newFsTreeNode(fsPath string) *FsNode {
-  return &FsNode{fsPath, nil}
+func newFsTreeNode(fsPath string) *FsTreeNode {
+  return &FsTreeNode{fsPath, nil}
 }
 
-func (n *FsNode) GetHashValue() []byte {
+func (n *FsTreeNode) GetHashValue() []byte {
   if n.hash != nil {
     return n.hash
   }
@@ -99,14 +99,14 @@ func (n *FsNode) GetHashValue() []byte {
   return n.hash
 }
 
-func (n *FsNode) IsDir() bool {
+func (n *FsTreeNode) IsDir() bool {
   if fi, err := os.Stat(n.fsPath); err == nil {
     return fi.IsDir()
   }
   panic("File not exists")
 }
 
-func (n *FsNode) GetChildren() map[string]Node {
+func (n *FsTreeNode) GetChildren() map[string]Node {
   children := make(map[string]Node)
   walkFn := func(fsPath string, info os.FileInfo, err error) error {
     name, _ := filepath.Rel(n.fsPath, fsPath)
@@ -123,13 +123,21 @@ func (n *FsNode) GetChildren() map[string]Node {
   return children
 }
 
-func (n *FsNode) IsExist() bool {
+func (n *FsTreeNode) GetData() ([]byte, error) {
+  if n.IsDir() {
+    return nil, ErrNotFile
+  }
+  data, err := ioutil.ReadFile(n.fsPath)
+  return data, err
+}
+
+func (n *FsTreeNode) IsExist() bool {
   if _, err := os.Stat(n.fsPath); err == nil {
     return true
   }
   return false
 }
 
-func (n *FsNode) String() string {
+func (n *FsTreeNode) String() string {
   return String(n)
 }

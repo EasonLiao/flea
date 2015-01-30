@@ -15,11 +15,11 @@ import (
 )
 
 var (
-  ErrNoMatch = errors.New("store: no match files")
-  ErrHashTooShort = errors.New("store: hash value is too short(more than one files match)")
-  ErrNotValidHash = errors.New("store: not valid hash value")
-  ErrFileCorrupted = errors.New("store: file corrupted")
-  ErrInvalidType = errors.New("store: invalid file type")
+  ErrNoMatch = errors.New("core: no match files")
+  ErrHashTooShort = errors.New("core: hash value is too short(more than one files match)")
+  ErrNotValidHash = errors.New("core: not valid hash value")
+  ErrFileCorrupted = errors.New("core: file corrupted")
+  ErrInvalidType = errors.New("core: invalid file type")
 )
 
 const (

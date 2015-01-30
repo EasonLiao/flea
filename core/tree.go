@@ -10,17 +10,18 @@ import (
 )
 
 var (
-  ErrNotDir = errors.New("store: not directory node")
-  ErrPathNotExist = errors.New("store: path not exist")
-  ErrInvalidPath = errors.New("store: invalid tree path")
-  ErrNodeAlreadyExist = errors.New("store: file already exists")
-  ErrReadOnlyRoot = errors.New("store: root node is read-only")
+  ErrNotFile = errors.New("core: not file node")
+  ErrNotDir = errors.New("core: not directory node")
+  ErrPathNotExist = errors.New("core: path not exist")
+  ErrInvalidPath = errors.New("core: invalid tree path")
+  ErrNodeAlreadyExist = errors.New("core: file already exists")
+  ErrReadOnlyRoot = errors.New("core: root node is read-only")
 )
 
 // The hash value of am empty directory.
 var EmptyDirHash, _, _ = WrapData(TreeType, []byte(""))
 // Returns SkipDirNode in VisitFn to skip traversing into directories.
-var SkipDirNode = errors.New("store: skip traversing into directory")
+var SkipDirNode = errors.New("core: skip traversing into directory")
 // VisitFn defines the signature of function which will be invoked during tree traversal.
 type VisitFn func(treePath string, node Node) error
 
@@ -46,6 +47,9 @@ type Node interface {
 
   // Converts node to readable string.
   String() string
+
+  // Gets the data of file.
+  GetData() ([]byte, error)
 }
 
 // Compares two trees and returns the differences. bMisses is a list path of files which

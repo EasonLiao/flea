@@ -298,6 +298,10 @@ func (n *MemTreeNode) updateHashValue() {
   }
 }
 
+func (n *MemTreeNode) GetData() ([]byte, error) {
+  panic("MemTreeNode doesn't support GetData() method.")
+}
+
 // Convert the Node to string.
 func (n *MemTreeNode) String() string {
   return String(n)

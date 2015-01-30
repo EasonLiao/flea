@@ -5,7 +5,7 @@ import (
 )
 
 var files = map[string][]byte {
-  "/README" : []byte("this is read me"),
+  "/README" : []byte("this is readme"),
   "/src" : nil,
   "/src/hello.py" : []byte("print \"hello world\""),
 }
@@ -20,6 +20,14 @@ func TestFsTree(t *testing.T) {
     panic(err.Error())
   }
   tree := newFsTree(dir)
+
+  // Verifies the data in node.
+  node, _ := tree.Get("/README")
+  data, _ := node.GetData()
+  if string(data) != "this is readme" {
+    t.Error("Incorrect content in node /README")
+  }
+
   nodes := make([]string, 0)
   fn := func(path string, node Node) error {
     if path == "/" {
