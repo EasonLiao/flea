@@ -132,10 +132,20 @@ func GetDirString(node Node) string {
   return content
 }
 
+// Converts node to readable string.
 func String(node Node) string {
   if node.IsDir() {
     return fmt.Sprintf("[Type:Dir, Hash:%x, Children: %d]", node.GetHashValue(), len(node.GetChildren()))
   } else {
     return fmt.Sprintf("[Type:File, Hash:%x]", node.GetHashValue())
   }
+}
+
+// Prints tree.
+func PrintTree(tree Tree) {
+  printFn := func(treePath string, node Node) error {
+    fmt.Printf("path : %s, node : %s\n", treePath, node)
+    return nil
+  }
+  tree.Traverse(printFn)
 }
