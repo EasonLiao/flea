@@ -70,9 +70,27 @@ func (tree *IndexTree) MkDir(treePath string) (err error) {
   return
 }
 
+// MkDirAll creates a directory named path, along with any necessary parents.
+func (tree *IndexTree) MkDirAll(treePath string) (err error) {
+  err = tree.memTree.MkDirAll(treePath)
+  if err == nil {
+    err = tree.flush()
+  }
+  return
+}
+
 // Creates a file with given hash value in tree.
 func (tree *IndexTree) MkFile(treePath string, hash []byte) (err error) {
   err = tree.memTree.MkFile(treePath, hash)
+  if err == nil {
+    err = tree.flush()
+  }
+  return
+}
+
+// MkFileAll creates a file with given path and hash value, along with any necessary parents.
+func (tree *IndexTree) MkFileAll(treePath string, hash []byte) (err error) {
+  err = tree.memTree.MkFileAll(treePath, hash)
   if err == nil {
     err = tree.flush()
   }

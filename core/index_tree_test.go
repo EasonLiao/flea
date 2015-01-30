@@ -32,4 +32,9 @@ func TestIndexTree(t *testing.T) {
   if len(m1) != 0 || len(m2) != 0 || len(diffes) != 0 {
     t.Error("Inconsistency between two trees.")
   }
+
+  tree.MkFileAll("/d1/d2/d3/file", generateRandomHash())
+  if _, err := tree.Get("/d1/d2/d3/file"); err != nil {
+    t.Error("Error in recursive creation.")
+  }
 }

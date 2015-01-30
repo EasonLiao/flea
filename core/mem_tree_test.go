@@ -89,6 +89,27 @@ func TestMemTree(t *testing.T) {
   if err != ErrReadOnlyRoot {
     t.Error("Expecting read-only root node error")
   }
+
+  // Tests creating dir/file recursively.
+  treeA := NewMemTree()
+  treeB := NewMemTree()
+  treeA.MkDirAll("/d1/d2/d3")
+  treeB.MkDir("/d1")
+  treeB.MkDir("/d1/d2")
+  treeB.MkDir("/d1/d2/d3")
+  m1, m2, diffes := CompareTrees(treeA, treeB)
+  if len(m1) != 0 || len(m2) != 0 || len(diffes) != 0 {
+    t.Error("Inconsistency between two trees.")
+  }
+  hash := generateRandomHash()
+  treeA.MkFileAll("/d/dd/ddd", hash)
+  treeB.MkDir("/d")
+  treeB.MkDir("/d/dd")
+  treeB.MkFile("/d/dd/ddd", hash)
+  m1, m2, diffes = CompareTrees(treeA, treeB)
+  if len(m1) != 0 || len(m2) != 0 || len(diffes) != 0 {
+    t.Error("Inconsistency between two trees.")
+  }
 }
 
 func TestTraversal(t *testing.T) {

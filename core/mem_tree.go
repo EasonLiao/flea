@@ -81,6 +81,15 @@ func (mt *MemTree) MkDir(treePath string) (err error) {
   return
 }
 
+// MkDirAll creates a directory named path, along with any necessary parents.
+func (mt *MemTree) MkDirAll(treePath string) (err error) {
+  dir := path.Dir(treePath)
+  if err := mt.mkdirAll(dir); err != nil {
+    return err
+  }
+  return mt.MkDir(treePath)
+}
+
 // Creates a file with given hash value in tree.
 func (mt *MemTree) MkFile(treePath string, hash []byte) (err error) {
   if treePath == "/" {
@@ -105,6 +114,15 @@ func (mt *MemTree) MkFile(treePath string, hash []byte) (err error) {
   }
   _, err = mt.apply(dir, op)
   return
+}
+
+// MkFileAll creates a file with given path and hash value, along with any necessary parents.
+func (mt *MemTree) MkFileAll(treePath string, hash []byte) (err error) {
+  dir := path.Dir(treePath)
+  if err := mt.mkdirAll(dir); err != nil {
+    return err
+  }
+  return mt.MkFile(treePath, hash)
 }
 
 // Deletes a node from the tree. If the node is a directory the whole directory will be
@@ -132,6 +150,22 @@ func (mt *MemTree) Delete(treePath string) (err error) {
   }
   _, err = mt.apply(dir, op)
   return
+}
+
+func (mt *MemTree) mkdirAll(dir string) error {
+  if node, err := mt.Get(dir); err == nil {
+    // dir already exists.
+    if !node.IsDir() {
+      return ErrNotDir
+    }
+    return nil
+  }
+  parent := path.Dir(dir)
+  err := mt.mkdirAll(parent)
+  if err != nil {
+    return err
+  }
+  return mt.MkDir(dir)
 }
 
 // Serializes the MemTree to byte array.
