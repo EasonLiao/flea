@@ -3,21 +3,20 @@ package core
 import (
   "bytes"
   "encoding/hex"
-  //"log"
   "os"
   "testing"
 )
 
 func TestStore(t *testing.T) {
-  InitStoreDir(os.TempDir())
+  store := newCAStore(os.TempDir())
   data := []byte("what is up, doc?")
-  hash1 := StoreBlob(data)
-  hash2 := StoreBlob(data)
+  hash1, _ := store.StoreBlob(data)
+  hash2, _ := store.StoreBlob(data)
   // The hash of the two should be the same.
   if bytes.Compare(hash1[:], hash2[:]) != 0 {
     t.Error("Hash values don't match for same content")
   }
-  name, fileType, content, err := Get(hash1[:])
+  name, fileType, content, err := store.Get(hash1[:])
   if err != nil {
     t.Error("error:", err.Error)
   }

@@ -19,7 +19,8 @@ func CmdHashObject() int {
   if err != nil {
     log.Fatal(err)
   }
-  hash := core.StoreBlob(data)
+  store := core.GetCAStore()
+  hash, _ := store.StoreBlob(data)
   fmt.Printf("%x\n", hash)
   return 0
 }

@@ -9,9 +9,8 @@ import (
 
 var _ = log.Println
 
-// FsTree is a wrapper on MemTree, it represents the tree structure of current working
-// directory. It simply converts the namespace of working directory to the MemTree
-// strucutre and provides the interface of Tree for accesses.
+// FsTree implements Tree interface. It represents the tree structure of current working
+// directory. It's also read-only.
 type FsTree struct {
   basePath string
   cache map[string]*FsNode
@@ -23,6 +22,7 @@ func NewFsTree(wd string) *FsTree {
   return tree
 }
 
+// See Tree interface.
 func (ft *FsTree) Get(path string) (Node, error) {
   if node, ok := ft.cache[path]; ok {
     return node, nil
@@ -35,6 +35,7 @@ func (ft *FsTree) Get(path string) (Node, error) {
   return node, nil
 }
 
+// See Tree interface.
 func (ft *FsTree) Traverse(fn VisitFn) error {
   walkFn := func(path string, info os.FileInfo, err error) error {
     if err != nil {

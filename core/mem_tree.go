@@ -257,7 +257,7 @@ type MemTreeNode struct {
   //  Whether the node is directory or not.
   Dir bool
   // Hash value of the node.
-  Hash [hashSize]byte
+  Hash [HashSize]byte
   // The children of the node if it's the directory.
   Children map[string]*MemTreeNode
 }
@@ -267,10 +267,10 @@ func newDirMemTreeNode() *MemTreeNode {
 }
 
 func newFileMemTreeNode(hash []byte) *MemTreeNode {
-  if len(hash) != hashSize {
+  if len(hash) != HashSize {
     panic("invalid length of hash")
   }
-  var hashArr  [hashSize]byte
+  var hashArr  [HashSize]byte
   copy(hashArr[:], hash)
   return &MemTreeNode{false, hashArr, nil}
 }

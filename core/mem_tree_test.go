@@ -7,8 +7,8 @@ import (
 )
 
 func generateRandomHash() []byte {
-  var arr [hashSize]byte
-  for i := 0; i <  hashSize; i++ {
+  var arr [HashSize]byte
+  for i := 0; i < HashSize; i++ {
     arr[i] = byte(rand.Int())
   }
   return arr[:]

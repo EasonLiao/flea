@@ -3,7 +3,7 @@ package main
 import (
   "fmt"
   "github.com/easonliao/flea/builtin"
-  "github.com/easonliao/flea/setup"
+  "github.com/easonliao/flea/core"
   "log"
   "os"
   "strings"
@@ -33,7 +33,7 @@ func runBuiltin(cmd string) {
     log.Fatal("Unkown command")
   } else {
     if cmdSt.flag & flagNeedSetup != 0 {
-      setup.SetupFleaDir()
+      core.InitFromExisting()
     }
     cmdSt.fun()
   }
