@@ -2,12 +2,11 @@ package core
 
 import (
   "io/ioutil"
-  "log"
   "os"
   "path/filepath"
 )
 
-var _ = log.Println
+var fsTree *FsTree
 
 // FsTree implements Tree interface. It represents the tree structure of current working
 // directory. It's also read-only.
@@ -16,8 +15,16 @@ type FsTree struct {
   cache map[string]*FsNode
 }
 
+// Gets the singleton FsTree.
+func GetFsTree() *FsTree {
+  if fsTree == nil {
+    fsTree = newFsTree(GetWorkingDirectory())
+  }
+  return fsTree
+}
+
 // Constructs a FsTree with the given path directory.
-func NewFsTree(fsPath string) *FsTree {
+func newFsTree(fsPath string) *FsTree {
   tree := &FsTree{baseFsPath :fsPath, cache : make(map[string]*FsNode)}
   return tree
 }
@@ -27,7 +34,7 @@ func (ft *FsTree) Get(treePath string) (Node, error) {
   if node, ok := ft.cache[treePath]; ok {
     return node, nil
   }
-  node := NewFsTreeNode(filepath.Join(ft.baseFsPath, filepath.FromSlash(treePath)))
+  node := newFsTreeNode(filepath.Join(ft.baseFsPath, filepath.FromSlash(treePath)))
   if !node.IsExist() {
     return nil, ErrPathNotExist
   }
@@ -68,7 +75,7 @@ type FsNode struct {
   hash []byte
 }
 
-func NewFsTreeNode(fsPath string) *FsNode {
+func newFsTreeNode(fsPath string) *FsNode {
   return &FsNode{fsPath, nil}
 }
 
@@ -106,7 +113,7 @@ func (n *FsNode) GetChildren() map[string]Node {
     if name == "." {
       return nil
     }
-    children[name] = NewFsTreeNode(fsPath)
+    children[name] = newFsTreeNode(fsPath)
     if info.IsDir() {
       return filepath.SkipDir
     }

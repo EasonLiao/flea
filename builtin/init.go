@@ -4,7 +4,7 @@ import (
   "github.com/easonliao/flea/core"
 )
 
-func CmdInit() int {
-  core.InitNew()
-  return 0
+func CmdInit() error {
+  err := core.InitNew()
+  return err
 }

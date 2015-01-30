@@ -4,7 +4,7 @@ import (
   "errors"
   "log"
   "os"
-  "path"
+  "path/filepath"
 )
 
 var (
@@ -17,13 +17,20 @@ var (
   workingDirectory = ""
   fleaDirectory = ""
   storeDirectory = ""
+  pathPrefix = ""
 )
 
 func initPaths(wd string) {
+  cd, _ := os.Getwd()
   workingDirectory = wd
-  fleaDirectory = path.Join(workingDirectory, ".flea")
-  storeDirectory = path.Join(fleaDirectory, "objects")
-  log.Println(workingDirectory, fleaDirectory, storeDirectory)
+  fleaDirectory = filepath.Join(workingDirectory, ".flea")
+  storeDirectory = filepath.Join(fleaDirectory, "objects")
+  pathPrefix, _ = filepath.Rel(workingDirectory, cd)
+  if pathPrefix == "." {
+    pathPrefix = ""
+  }
+  pathPrefix = "/" + pathPrefix
+  log.Println(workingDirectory, fleaDirectory, storeDirectory, pathPrefix)
   initialized = true
 }
 
@@ -34,7 +41,7 @@ func InitNew() error {
   if err != nil {
     return err
   }
-  fd := path.Join(cwd, ".flea")
+  fd := filepath.Join(cwd, ".flea")
   if _, err := os.Stat(fd); err == nil {
     err = ErrFleaDirExist
     return err
@@ -42,9 +49,9 @@ func InitNew() error {
     return err
   }
   os.Mkdir(fd, os.ModeDir | 0777)
-  os.Mkdir(path.Join(fd, "objects"), os.ModeDir | 0777)
-  os.Mkdir(path.Join(fd, "refs"), os.ModeDir | 0777)
-  os.Mkdir(path.Join(fd, "infos"), os.ModeDir | 0777)
+  os.Mkdir(filepath.Join(fd, "objects"), os.ModeDir | 0777)
+  os.Mkdir(filepath.Join(fd, "refs"), os.ModeDir | 0777)
+  os.Mkdir(filepath.Join(fd, "infos"), os.ModeDir | 0777)
   initPaths(cwd)
   return nil
 }
@@ -57,14 +64,14 @@ func InitFromExisting() error {
   }
   curDir := cwd
   for {
-    if _, err := os.Stat(path.Join(curDir, ".flea")); err != nil {
+    if _, err := os.Stat(filepath.Join(curDir, ".flea")); err != nil {
       prevDir := curDir
-      curDir = path.Dir(curDir)
+      curDir = filepath.Dir(curDir)
       if prevDir == curDir {
         return ErrNoFleaDir
       }
     } else {
-      initPaths(cwd)
+      initPaths(curDir)
       break
     }
   }
@@ -87,6 +94,12 @@ func GetFleaDirectory() string {
 func GetStoreDirectory() string {
   assertInit()
   return storeDirectory
+}
+
+// Gets the prefix of the path.
+func GetPathPrefix() string {
+  assertInit()
+  return pathPrefix
 }
 
 func assertInit() {

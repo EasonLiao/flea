@@ -19,7 +19,7 @@ func TestFsTree(t *testing.T) {
   if err != nil {
     panic(err.Error())
   }
-  tree := NewFsTree(dir)
+  tree := newFsTree(dir)
   nodes := make([]string, 0)
   fn := func(path string, node Node) error {
     if path == "/" {

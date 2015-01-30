@@ -9,7 +9,7 @@ import (
   "os"
 )
 
-func CmdCatFile() int {
+func CmdCatFile() error {
   if len(os.Args) <= 2 {
     log.Fatal("Not enough arguments.")
   }
@@ -31,5 +31,5 @@ func CmdCatFile() int {
   } else {
     fmt.Println(string(data))
   }
-  return 0
+  return nil
 }

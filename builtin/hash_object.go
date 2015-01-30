@@ -9,7 +9,7 @@ import (
   "os"
 )
 
-func CmdHashObject() int {
+func CmdHashObject() error {
   flags := flag.NewFlagSet("hash-object", 0)
   // The first one is the executable name, the second one is the command name,
   // actual arguments start from the third one.
@@ -22,5 +22,5 @@ func CmdHashObject() int {
   store := core.GetCAStore()
   hash, _ := store.StoreBlob(data)
   fmt.Printf("%x\n", hash)
-  return 0
+  return nil
 }

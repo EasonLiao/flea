@@ -18,7 +18,7 @@ const (
 )
 
 type cmdStruct struct {
-  fun func() int
+  fun func() error
   flag int
 }
 
@@ -26,6 +26,8 @@ var commandsTable = map[string]cmdStruct {
   "init" : {fun : builtin.CmdInit},
   "hash-object" : {fun : builtin.CmdHashObject, flag : flagNeedSetup},
   "cat-file" : {fun : builtin.CmdCatFile, flag : flagNeedSetup},
+  "status" : {fun : builtin.CmdStatus, flag : flagNeedSetup},
+  "add" : {fun : builtin.CmdAdd, flag : flagNeedSetup},
 }
 
 func runBuiltin(cmd string) {
@@ -33,9 +35,15 @@ func runBuiltin(cmd string) {
     log.Fatal("Unkown command")
   } else {
     if cmdSt.flag & flagNeedSetup != 0 {
-      core.InitFromExisting()
+      err := core.InitFromExisting()
+      if err != nil {
+        fmt.Println(err.Error())
+      }
     }
-    cmdSt.fun()
+    err := cmdSt.fun()
+    if err != nil {
+      fmt.Println(err.Error())
+    }
   }
 }
 
