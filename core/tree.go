@@ -22,12 +22,12 @@ var EmptyDirHash, _, _ = WrapData(TreeType, []byte(""))
 // Returns SkipDirNode in VisitFn to skip traversing into directories.
 var SkipDirNode = errors.New("store: skip traversing into directory")
 // VisitFn defines the signature of function which will be invoked during tree traversal.
-type VisitFn func(path string, node Node) error
+type VisitFn func(treePath string, node Node) error
 
 // Tree interface.
 type Tree interface {
   // Gets the node of the given path.
-  Get(path string) (Node, error)
+  Get(treePath string) (Node, error)
 
   // Traverses the tree structure.  VisitFn will be invoked during traversal.
   Traverse(fn VisitFn) error
@@ -57,10 +57,10 @@ func CompareTrees(a Tree, b Tree) (bMisses []string, aMisses []string, diffes []
   diffes = make([]string, 0, 64)
   peerTree := b
 
-  visitFn := func(path string, node Node) error {
-    peerNode, err := peerTree.Get(path)
+  visitFn := func(treePath string, node Node) error {
+    peerNode, err := peerTree.Get(treePath)
     if err == ErrPathNotExist {
-      misses = append(misses, path)
+      misses = append(misses, treePath)
       if node.IsDir() {
         return SkipDirNode
       }
@@ -68,7 +68,7 @@ func CompareTrees(a Tree, b Tree) (bMisses []string, aMisses []string, diffes []
     }
     if node.IsDir() != peerNode.IsDir() {
       // One is directory, one is file.
-      diffes = append(diffes, path)
+      diffes = append(diffes, treePath)
       return SkipDirNode
     }
     // Two nodes have the same type.
@@ -80,7 +80,7 @@ func CompareTrees(a Tree, b Tree) (bMisses []string, aMisses []string, diffes []
     }
     if !node.IsDir() && !isHashSame {
       // They are two files with different hash values.
-      diffes = append(diffes, path)
+      diffes = append(diffes, treePath)
     }
     return nil
   }

@@ -2,7 +2,7 @@ package core
 
 import (
   "encoding/json"
-  "path/filepath"
+  "path"
   "strings"
 )
 
@@ -18,12 +18,12 @@ type MemTree struct  {
 }
 
 // Gets the node for a given path.
-func (mt *MemTree) Get(path string) (Node, error) {
-  if path == "/" {
+func (mt *MemTree) Get(treePath string) (Node, error) {
+  if treePath == "/" {
     return mt.root, nil
   }
-  nodeName := filepath.Base(path)
-  dir := filepath.Dir(path)
+  nodeName := path.Base(treePath)
+  dir := path.Dir(treePath)
   op := func(node *MemTreeNode) (changed bool, ret interface{}, err error) {
     if !node.Dir {
       err = ErrNotDir
@@ -56,13 +56,13 @@ func (mt *MemTree) Traverse(fn VisitFn) error {
 }
 
 // Creates a directory in tree.
-func (mt *MemTree) MkDir(path string) (err error) {
-  if path == "/" {
+func (mt *MemTree) MkDir(treePath string) (err error) {
+  if treePath == "/" {
     err = ErrReadOnlyRoot
     return
   }
-  dirName := filepath.Base(path)
-  dir := filepath.Dir(path)
+  dirName := path.Base(treePath)
+  dir := path.Dir(treePath)
   op := func(node *MemTreeNode) (changed bool, ret interface{}, err error) {
     if !node.Dir {
       err = ErrNotDir
@@ -82,13 +82,13 @@ func (mt *MemTree) MkDir(path string) (err error) {
 }
 
 // Creates a file with given hash value in tree.
-func (mt *MemTree) MkFile(path string, hash []byte) (err error) {
-  if path == "/" {
+func (mt *MemTree) MkFile(treePath string, hash []byte) (err error) {
+  if treePath == "/" {
     err = ErrReadOnlyRoot
     return
   }
-  fileName := filepath.Base(path)
-  dir := filepath.Dir(path)
+  fileName := path.Base(treePath)
+  dir := path.Dir(treePath)
   op := func(node *MemTreeNode) (changed bool, ret interface{}, err error) {
     if !node.Dir {
       err = ErrNotDir
@@ -109,13 +109,13 @@ func (mt *MemTree) MkFile(path string, hash []byte) (err error) {
 
 // Deletes a node from the tree. If the node is a directory the whole directory will be
 // deleted.
-func (mt *MemTree) Delete(path string) (err error) {
-  if path == "/" {
+func (mt *MemTree) Delete(treePath string) (err error) {
+  if treePath == "/" {
     err = ErrReadOnlyRoot
     return
   }
-  nodeName := filepath.Base(path)
-  dir := filepath.Dir(path)
+  nodeName := path.Base(treePath)
+  dir := path.Dir(treePath)
   op := func(node *MemTreeNode) (changed bool, ret interface{}, err error) {
     if !node.Dir {
       err = ErrNotDir
@@ -141,11 +141,11 @@ func (mt *MemTree) Serialize() ([]byte, error) {
     Hash []byte `json:hash`
   }
   nodes := make([]tuple, 0)
-  traverseFn := func(path string, node Node) error {
+  traverseFn := func(treePath string, node Node) error {
     if node.IsDir() {
-      nodes = append(nodes, tuple{path, nil})
+      nodes = append(nodes, tuple{treePath, nil})
     } else {
-      nodes = append(nodes, tuple{path, node.GetHashValue()})
+      nodes = append(nodes, tuple{treePath, node.GetHashValue()})
     }
     return nil
   }
@@ -187,15 +187,15 @@ func Deserialize(data []byte) (*MemTree, error) {
 // Apply an operation to node of the given path. This is the primitive used by other
 // methods like Delete, MkDir, MkFile. This separates the traversing of the tree from
 // the actual operation on the tree.
-func (mt *MemTree) apply(path string, op Op) (ret interface{}, err error) {
-  if !strings.HasPrefix(path, "/") {
+func (mt *MemTree) apply(treePath string, op Op) (ret interface{}, err error) {
+  if !strings.HasPrefix(treePath, "/") {
     // path must starts with /
     err = ErrInvalidPath
     return
   }
   // Trim the root path
-  path = path[1:]
-  _, ret, err = recursive(mt.root, path, op)
+  treePath= treePath[1:]
+  _, ret, err = recursive(mt.root,treePath, op)
   return
 }
 
@@ -234,12 +234,12 @@ func recursive(node *MemTreeNode, remPath string, op Op) (changed bool, ret inte
   return
 }
 
-func recursiveTraverse(path string, node* MemTreeNode, fn VisitFn) (err error) {
-  err = fn(path, node)
+func recursiveTraverse(treePath string, node* MemTreeNode, fn VisitFn) (err error) {
+  err = fn(treePath, node)
   if err == nil && node.Dir {
     // node is directory, traverse into it.
     for childName, childNode := range(node.Children) {
-      err = recursiveTraverse(filepath.Join(path, childName), childNode, fn)
+      err = recursiveTraverse(path.Join(treePath, childName), childNode, fn)
       if err != nil {
         return err
       }

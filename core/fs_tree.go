@@ -12,60 +12,64 @@ var _ = log.Println
 // FsTree implements Tree interface. It represents the tree structure of current working
 // directory. It's also read-only.
 type FsTree struct {
-  basePath string
+  baseFsPath string
   cache map[string]*FsNode
 }
 
 // Constructs a FsTree with the given path directory.
-func NewFsTree(wd string) *FsTree {
-  tree := &FsTree{basePath : wd, cache : make(map[string]*FsNode)}
+func NewFsTree(fsPath string) *FsTree {
+  tree := &FsTree{baseFsPath :fsPath, cache : make(map[string]*FsNode)}
   return tree
 }
 
 // See Tree interface.
-func (ft *FsTree) Get(path string) (Node, error) {
-  if node, ok := ft.cache[path]; ok {
+func (ft *FsTree) Get(treePath string) (Node, error) {
+  if node, ok := ft.cache[treePath]; ok {
     return node, nil
   }
-  node := NewFsTreeNode(filepath.Join(ft.basePath, path))
+  node := NewFsTreeNode(filepath.Join(ft.baseFsPath, filepath.FromSlash(treePath)))
   if !node.IsExist() {
     return nil, ErrPathNotExist
   }
-  ft.cache[path] = node
+  ft.cache[treePath] = node
   return node, nil
 }
 
 // See Tree interface.
 func (ft *FsTree) Traverse(fn VisitFn) error {
-  walkFn := func(path string, info os.FileInfo, err error) error {
+  walkFn := func(fsPath string, info os.FileInfo, err error) error {
     if err != nil {
       return err
     }
-    relPath, _ := filepath.Rel(ft.basePath, path)
-    if relPath == "." {
-      relPath = ""
+    relPath, err := filepath.Rel(ft.baseFsPath, fsPath)
+    if err != nil {
+      return err
     }
-    relPath = "/" + relPath
-    node, gerr := ft.Get(relPath)
+    treePath := filepath.ToSlash(relPath)
+    if  treePath == "." {
+      treePath = ""
+    }
+    treePath = "/" + treePath
+    node, gerr := ft.Get(treePath)
     if gerr != nil {
       panic("bug?")
     }
-    err = fn(relPath, node)
+    err = fn(treePath, node)
     if err == SkipDirNode {
       err = filepath.SkipDir
     }
     return err
   }
-  return filepath.Walk(ft.basePath, walkFn)
+  return filepath.Walk(ft.baseFsPath, walkFn)
 }
 
 type FsNode struct {
-  path string
+  fsPath string
   hash []byte
 }
 
-func NewFsTreeNode(path string) *FsNode {
-  return &FsNode{path, nil}
+func NewFsTreeNode(fsPath string) *FsNode {
+  return &FsNode{fsPath, nil}
 }
 
 func (n *FsNode) GetHashValue() []byte {
@@ -78,9 +82,9 @@ func (n *FsNode) GetHashValue() []byte {
     n.hash = hash[:]
   } else {
     // If it's a file, the hash value is the hash value of the file.
-    data, err := ioutil.ReadFile(n.path)
+    data, err := ioutil.ReadFile(n.fsPath)
     if err != nil {
-      panic("Error while reading file " + n.path)
+      panic("Error while reading file " + n.fsPath)
     }
     hash, _, _ := WrapData(BlobType, data)
     n.hash = hash[:]
@@ -89,7 +93,7 @@ func (n *FsNode) GetHashValue() []byte {
 }
 
 func (n *FsNode) IsDir() bool {
-  if fi, err := os.Stat(n.path); err == nil {
+  if fi, err := os.Stat(n.fsPath); err == nil {
     return fi.IsDir()
   }
   panic("File not exists")
@@ -97,23 +101,23 @@ func (n *FsNode) IsDir() bool {
 
 func (n *FsNode) GetChildren() map[string]Node {
   children := make(map[string]Node)
-  walkFn := func(path string, info os.FileInfo, err error) error {
-    name, _ := filepath.Rel(n.path, path)
+  walkFn := func(fsPath string, info os.FileInfo, err error) error {
+    name, _ := filepath.Rel(n.fsPath, fsPath)
     if name == "." {
       return nil
     }
-    children[name] = NewFsTreeNode(path)
+    children[name] = NewFsTreeNode(fsPath)
     if info.IsDir() {
       return filepath.SkipDir
     }
     return nil
   }
-  filepath.Walk(n.path, walkFn)
+  filepath.Walk(n.fsPath, walkFn)
   return children
 }
 
 func (n *FsNode) IsExist() bool {
-  if _, err := os.Stat(n.path); err == nil {
+  if _, err := os.Stat(n.fsPath); err == nil {
     return true
   }
   return false
