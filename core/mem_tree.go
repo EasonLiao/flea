@@ -51,8 +51,16 @@ func (mt *MemTree) Get(treePath string) (Node, error) {
 }
 
 // Traverse the tree structure. MemTree traverses the tree in DFS way.
-func (mt *MemTree) Traverse(fn VisitFn) error {
-  return recursiveTraverse("/", mt.root, fn)
+func (mt *MemTree) Traverse(fn VisitFn, root string) error {
+  node, err := mt.Get(root)
+  if err != nil {
+    return err
+  }
+  if node, ok := node.(*MemTreeNode); ok {
+    return recursiveTraverse(root, node, fn)
+  } else {
+    panic("bug?")
+  }
 }
 
 // Creates a directory in tree.
@@ -183,7 +191,7 @@ func (mt *MemTree) Serialize() ([]byte, error) {
     }
     return nil
   }
-  mt.Traverse(traverseFn)
+  mt.Traverse(traverseFn, "/")
   data, err := json.Marshal(nodes)
   if err != nil {
     return nil, err

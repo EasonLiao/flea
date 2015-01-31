@@ -31,7 +31,7 @@ type Tree interface {
   Get(treePath string) (Node, error)
 
   // Traverses the tree structure.  VisitFn will be invoked during traversal.
-  Traverse(fn VisitFn) error
+  Traverse(fn VisitFn, root string) error
 }
 
 // Node interface.
@@ -94,7 +94,7 @@ func CompareTrees(a Tree, b Tree) (bMisses []string, aMisses []string, diffes []
   }
 
   // Starts first traversal on tree a.
-  a.Traverse(visitFn)
+  a.Traverse(visitFn, "/")
   bMisses = misses
 
   firstDiffes := diffes
@@ -102,7 +102,7 @@ func CompareTrees(a Tree, b Tree) (bMisses []string, aMisses []string, diffes []
   misses = make([]string, 0, 64)
   diffes = make([]string, 0, len(firstDiffes))
   peerTree = a
-  b.Traverse(visitFn)
+  b.Traverse(visitFn, "/")
   aMisses = misses
   if len(diffes) != len(firstDiffes) {
     panic("a bug?")
@@ -155,5 +155,5 @@ func PrintTree(tree Tree) {
     fmt.Printf("path : %s, node : %s\n", treePath, node)
     return nil
   }
-  tree.Traverse(printFn)
+  tree.Traverse(printFn, "/")
 }

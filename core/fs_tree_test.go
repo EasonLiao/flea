@@ -36,7 +36,7 @@ func TestFsTree(t *testing.T) {
     nodes = append(nodes, path)
     return nil
   }
-  tree.Traverse(fn)
+  tree.Traverse(fn, "/")
   if len(nodes) != len(files) {
     t.Error("Number of files/directories is incorrect")
   }
@@ -56,7 +56,7 @@ func TestFsTree(t *testing.T) {
     }
     return nil
   }
-  tree.Traverse(fn)
+  tree.Traverse(fn, "/")
   m1, m2, diffes := CompareTrees(tree, memTree)
 
   if len(m1) != 0 || len(m2) != 0 || len(diffes) != 0 {

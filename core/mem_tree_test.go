@@ -123,7 +123,7 @@ func TestTraversal(t *testing.T) {
     visitMap[path] = true
     return nil
   }
-  tree.Traverse(visitFn)
+  tree.Traverse(visitFn, "/")
   if _, ok := visitMap["/"]; !ok {
     t.Error("/ should be visited")
   }
@@ -149,7 +149,7 @@ func TestTraversal(t *testing.T) {
     }
     return nil
   }
-  tree.Traverse(visitFn)
+  tree.Traverse(visitFn, "/")
   if _, ok := visitMap["/"]; !ok {
     t.Error("/ should be visited")
   }

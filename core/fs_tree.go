@@ -43,7 +43,8 @@ func (ft *FsTree) Get(treePath string) (Node, error) {
 }
 
 // See Tree interface.
-func (ft *FsTree) Traverse(fn VisitFn) error {
+func (ft *FsTree) Traverse(fn VisitFn, root string) error {
+  fsPath := filepath.FromSlash(root)
   walkFn := func(fsPath string, info os.FileInfo, err error) error {
     if err != nil {
       return err
@@ -67,7 +68,7 @@ func (ft *FsTree) Traverse(fn VisitFn) error {
     }
     return err
   }
-  return filepath.Walk(ft.baseFsPath, walkFn)
+  return filepath.Walk(filepath.Join(ft.baseFsPath, fsPath), walkFn)
 }
 
 type FsTreeNode struct {

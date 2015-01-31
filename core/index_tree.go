@@ -57,8 +57,8 @@ func (tree *IndexTree) Get(treePath string) (Node, error) {
 }
 
 // Traverse the tree structure. MemTree traverses the tree in DFS way.
-func (tree *IndexTree) Traverse(fn VisitFn) error {
-  return tree.memTree.Traverse(fn)
+func (tree *IndexTree) Traverse(fn VisitFn, root string) error {
+  return tree.memTree.Traverse(fn, root)
 }
 
 // Creates a directory in tree.
