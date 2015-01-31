@@ -10,14 +10,10 @@ func TestIndexTree(t *testing.T) {
   file := filepath.Join(dir, "index")
   tree, _ := newIndexTree(file)
   tree.MkDir("/foo1")
-  tree.MkDir("/foo2")
   tree.MkFile("/foo1/file1", generateRandomHash())
   tree.MkFile("/foo1/file2", generateRandomHash())
   if _, err := tree.Get("/foo1"); err != nil {
     t.Error("/foo1 doesnt exist.")
-  }
-  if _, err := tree.Get("/foo2"); err != nil {
-    t.Error("/foo2 doesnt exist.")
   }
   if _, err := tree.Get("/foo1/file1"); err != nil {
     t.Error("/foo1/file1 doesnt exist.")

@@ -184,9 +184,7 @@ func (mt *MemTree) Serialize() ([]byte, error) {
   }
   nodes := make([]tuple, 0)
   traverseFn := func(treePath string, node Node) error {
-    if node.IsDir() {
-      nodes = append(nodes, tuple{treePath, nil})
-    } else {
+    if !node.IsDir() {
       nodes = append(nodes, tuple{treePath, node.GetHashValue()})
     }
     return nil
@@ -217,11 +215,7 @@ func Deserialize(data []byte) (*MemTree, error) {
   }
   tree := NewMemTree()
   for _, t := range(nodes) {
-    if t.Hash != nil {
-      tree.MkFile(t.Path, t.Hash)
-    } else {
-      tree.MkDir(t.Path)
-    }
+    tree.MkFileAll(t.Path, t.Hash)
   }
   return tree, nil
 }
