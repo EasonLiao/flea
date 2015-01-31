@@ -62,6 +62,10 @@ func CompareTrees(a Tree, b Tree) (bMisses []string, aMisses []string, diffes []
   peerTree := b
 
   visitFn := func(treePath string, node Node) error {
+    if treePath == "/" {
+      // Skips comparasion for root path.
+      return nil
+    }
     peerNode, err := peerTree.Get(treePath)
     if err == ErrPathNotExist {
       misses = append(misses, treePath)

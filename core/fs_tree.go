@@ -34,7 +34,7 @@ func (ft *FsTree) Get(treePath string) (Node, error) {
   if node, ok := ft.cache[treePath]; ok {
     return node, nil
   }
-  node := newFsTreeNode(filepath.Join(ft.baseFsPath, filepath.FromSlash(treePath)))
+  node := newFsTreeNode(filepath.Join(ft.baseFsPath, filepath.FromSlash(treePath)), ft)
   if !node.IsExist() {
     return nil, ErrPathNotExist
   }
@@ -73,10 +73,12 @@ func (ft *FsTree) Traverse(fn VisitFn) error {
 type FsTreeNode struct {
   fsPath string
   hash []byte
+  tree *FsTree
+  children map[string]Node
 }
 
-func newFsTreeNode(fsPath string) *FsTreeNode {
-  return &FsTreeNode{fsPath, nil}
+func newFsTreeNode(fsPath string, tree* FsTree) *FsTreeNode {
+  return &FsTreeNode{fsPath : fsPath, tree : tree}
 }
 
 func (n *FsTreeNode) GetHashValue() []byte {
@@ -107,19 +109,32 @@ func (n *FsTreeNode) IsDir() bool {
 }
 
 func (n *FsTreeNode) GetChildren() map[string]Node {
+  if n.children != nil {
+    return n.children
+  }
   children := make(map[string]Node)
   walkFn := func(fsPath string, info os.FileInfo, err error) error {
     name, _ := filepath.Rel(n.fsPath, fsPath)
     if name == "." {
       return nil
     }
-    children[name] = newFsTreeNode(fsPath)
+    relPath, err := filepath.Rel(n.tree.baseFsPath, fsPath)
+    if err != nil {
+      return err
+    }
+    treePath := filepath.ToSlash(relPath)
+    children[name], err = n.tree.Get(treePath)
+    if err != nil {
+      panic(err.Error() + fsPath)
+    }
     if info.IsDir() {
       return filepath.SkipDir
     }
     return nil
   }
   filepath.Walk(n.fsPath, walkFn)
+  // Caches the children.
+  n.children = children
   return children
 }
 
