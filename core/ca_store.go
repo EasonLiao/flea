@@ -8,7 +8,6 @@ import (
   "errors"
   "io/ioutil"
   "os"
-  "path"
   "path/filepath"
   "strconv"
   "strings"
@@ -57,6 +56,17 @@ func (store *CAStore) StoreBlob(data []byte) ([]byte, error) {
   return hash[:], nil
 }
 
+// Stores tree data to content-addressable store.
+func (store *CAStore) StoreTree(data []byte) ([]byte, error) {
+  hash, blob, err := WrapData(TreeType, data)
+  if err != nil {
+    return nil, err
+  }
+  fileName := hex.EncodeToString(hash[:])
+  ioutil.WriteFile(filepath.Join(store.dir, fileName), blob, 0444)
+  return hash[:], nil
+}
+
 // Gets a list of filenames that match the prefix of the hash value.
 func (store *CAStore) GetFileName(hashPrefix []byte) (names []string, err error) {
   if len(hashPrefix) > HashSize {
@@ -80,7 +90,7 @@ func (store *CAStore) GetFileName(hashPrefix []byte) (names []string, err error)
 }
 
 // Returns the type and data of the file based on the hash prefix.
-func (store *CAStore) Get(hashPrefix []byte) (name string, fileType string, data []byte, err error) {
+func (store *CAStore) GetWithPrefix(hashPrefix []byte) (name string, fileType string, data []byte, err error) {
   names, err := store.GetFileName(hashPrefix)
   if err != nil {
     return
@@ -93,7 +103,7 @@ func (store *CAStore) Get(hashPrefix []byte) (name string, fileType string, data
     return
   }
   name = names[0]
-  data, err = ioutil.ReadFile(path.Join(store.dir, name))
+  data, err = ioutil.ReadFile(filepath.Join(store.dir, name))
   sepIdx := bytes.IndexByte(data, 0)
   header, data := data[:sepIdx], data[sepIdx + 1:]
   headers := strings.Split(string(header), " ")
@@ -107,6 +117,37 @@ func (store *CAStore) Get(hashPrefix []byte) (name string, fileType string, data
     err = ErrFileCorrupted
   }
   return
+}
+
+func (store* CAStore) Get(hash []byte) (fileType string, data []byte, err error) {
+  fileName := hex.EncodeToString(hash)
+  fullPath := filepath.Join(store.dir, fileName)
+  if _, err = os.Stat(fullPath); err == nil {
+    data, err = ioutil.ReadFile(fullPath)
+    sepIdx := bytes.IndexByte(data, 0)
+    header, data := data[:sepIdx], data[sepIdx + 1:]
+    headers := strings.Split(string(header), " ")
+    fileType = headers[0]
+    length, err := strconv.Atoi(headers[1])
+    if err != nil {
+      return "", nil, err
+    }
+    // sanity check, length field must match the actual length of data.
+    if length != len(data) {
+      err = ErrFileCorrupted
+    }
+    return fileType, data, err
+  }
+  return
+}
+
+// Given a hash value, returns true if a file with the given hash exists in store.
+func (store *CAStore) Exists(hash []byte) bool {
+  fileName := hex.EncodeToString(hash)
+  if _, err := os.Stat(filepath.Join(store.dir, fileName)); err == nil {
+    return true
+  }
+  return false
 }
 
 func WrapData(fileType string, data []byte) (hash [HashSize]byte, blob []byte, err error) {

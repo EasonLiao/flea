@@ -44,31 +44,15 @@ func (ft *FsTree) Get(treePath string) (Node, error) {
 
 // See Tree interface.
 func (ft *FsTree) Traverse(fn VisitFn, root string) error {
-  fsPath := filepath.FromSlash(root)
-  walkFn := func(fsPath string, info os.FileInfo, err error) error {
-    if err != nil {
-      return err
-    }
-    relPath, err := filepath.Rel(ft.baseFsPath, fsPath)
-    if err != nil {
-      return err
-    }
-    treePath := filepath.ToSlash(relPath)
-    if  treePath == "." {
-      treePath = ""
-    }
-    treePath = "/" + treePath
-    node, gerr := ft.Get(treePath)
-    if gerr != nil {
-      panic("bug?")
-    }
-    err = fn(treePath, node)
-    if err == SkipDirNode {
-      err = filepath.SkipDir
-    }
+  node, err := ft.Get(root)
+  if err != nil {
     return err
   }
-  return filepath.Walk(filepath.Join(ft.baseFsPath, fsPath), walkFn)
+  if node, ok := node.(*FsTreeNode); ok {
+    return recursiveTraverse(root, node, fn)
+  } else {
+    panic("bug?")
+  }
 }
 
 type FsTreeNode struct {

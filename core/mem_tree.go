@@ -270,24 +270,6 @@ func recursive(node *MemTreeNode, remPath string, op Op) (changed bool, ret inte
   return
 }
 
-func recursiveTraverse(treePath string, node* MemTreeNode, fn VisitFn) (err error) {
-  err = fn(treePath, node)
-  if err == nil && node.Dir {
-    // node is directory, traverse into it.
-    for childName, childNode := range(node.Children) {
-      err = recursiveTraverse(path.Join(treePath, childName), childNode, fn)
-      if err != nil {
-        return err
-      }
-    }
-  }
-  if err == SkipDirNode {
-    // SkipDirNode is not actual error, reset it to nil.
-    err = nil
-  }
-  return
-}
-
 // Node of MemTree.
 type MemTreeNode struct {
   //  Whether the node is directory or not.

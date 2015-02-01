@@ -6,6 +6,7 @@ import (
   "errors"
   "fmt"
   "log"
+  "path"
   "sort"
 )
 
@@ -121,7 +122,7 @@ func GetDirString(node Node) string {
       i++
     }
     sort.Strings(names)
-    for _, name := range(names) {
+    for idx, name := range(names) {
       child, ok := children[name]
       if !ok {
         panic("bug?")
@@ -132,7 +133,11 @@ func GetDirString(node Node) string {
         content += "blob "
       }
       content += hex.EncodeToString(child.GetHashValue())
-      content += " " + name + "\n"
+      content += " " + name
+      if idx != len(names) - 1 {
+        // The last one row shouldn't contain "\n"
+        content += "\n"
+      }
     }
   } else {
     log.Fatal("File node doesn't contain any data in MemTree")
@@ -143,7 +148,7 @@ func GetDirString(node Node) string {
 // Converts node to readable string.
 func String(node Node) string {
   if node.IsDir() {
-    return fmt.Sprintf("[Type:Dir, Hash:%x, Children: %d]", node.GetHashValue(), len(node.GetChildren()))
+    return fmt.Sprintf("[Type:Dir, Hash:%x]", node.GetHashValue())
   } else {
     return fmt.Sprintf("[Type:File, Hash:%x]", node.GetHashValue())
   }
@@ -156,4 +161,22 @@ func PrintTree(tree Tree) {
     return nil
   }
   tree.Traverse(printFn, "/")
+}
+
+func recursiveTraverse(treePath string, node Node, fn VisitFn) (err error) {
+  err = fn(treePath, node)
+  if err == nil && node.IsDir() {
+    // node is directory, traverse into it.
+    for childName, childNode := range(node.GetChildren()) {
+      err = recursiveTraverse(path.Join(treePath, childName), childNode, fn)
+      if err != nil {
+        return err
+      }
+    }
+  }
+  if err == SkipDirNode {
+    // SkipDirNode is not actual error, reset it to nil.
+    err = nil
+  }
+  return
 }

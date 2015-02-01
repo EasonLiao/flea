@@ -22,7 +22,7 @@ func CmdCatFile() error {
     log.Fatal("Invalid hash values.")
   }
   store := core.GetCAStore()
-  _, fileType, data, err := store.Get(hash)
+  _, fileType, data, err := store.GetWithPrefix(hash)
   if err != nil {
     log.Fatal(err)
   }
