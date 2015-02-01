@@ -2,13 +2,81 @@ package core
 
 import (
   "bytes"
+  "encoding/hex"
+  "encoding/json"
   "errors"
+  "io/ioutil"
+  "log"
+  "path/filepath"
 )
 
 var (
   ErrEmptyTree = errors.New("core: tree is empty")
   ErrFileNotInCaStore = errors.New("core: file is not in CAStore")
 )
+
+type Commit struct {
+  Tree        []byte  `json:tree`
+  PrevCommit  []byte  `json:prev`
+  Author      string  `json:author`
+  Comment     string  `json:comment`
+}
+
+func (c *Commit) GetPrevCommit() *Commit {
+  if c.PrevCommit == nil {
+    // No ancester commit object.
+    return nil
+  }
+  fType, data, err := GetCAStore().Get(c.PrevCommit)
+  if err != nil {
+    panic(err.Error())
+  }
+  if fType != CommitType {
+    panic("Not a valid commit hash.")
+  }
+  commit, err := fromBytesToCommitObject(data)
+  if err != nil {
+    panic(err.Error())
+  }
+  return commit
+}
+
+func (c* Commit) GetCommitHash() []byte {
+  data, err := fromCommitObjectToBytes(c)
+  if err != nil {
+    panic("Not valid commit object")
+  }
+  hash, _, _ := WrapData(CommitType, data)
+  return hash[:]
+}
+
+// Creates a commit object in CAStore.
+func CreateCommitObject(tree, prevCommit []byte, author, comment string) ([]byte, error) {
+  commit := Commit{tree, prevCommit, author, comment}
+  store := GetCAStore()
+  if !store.Exists(tree) {
+    log.Fatal("Invalid tree hash.")
+  }
+  if prevCommit != nil && !store.Exists(prevCommit) {
+    log.Fatal("Invalid previous commit  hash.")
+  }
+  data, err := fromCommitObjectToBytes(&commit)
+  if err != nil {
+    return nil, err
+  }
+  return GetCAStore().StoreCommit(data)
+}
+
+// Updates the head commit of a the branch.
+func UpdateBranchHead(branch string, commitHash []byte) {
+  if !GetCAStore().Exists(commitHash) {
+    panic("Not a valid commit hash.")
+  }
+  hashString := hex.EncodeToString(commitHash)
+  if err := ioutil.WriteFile(filepath.Join(GetBranchHeadDir(), branch), []byte(hashString), 0777); err != nil {
+    panic("Failed to update the head of the branch." + err.Error())
+  }
+}
 
 // Builds a CATree from the staging area.
 func BuildCATreeFromIndexFile() (*CATree, error) {
@@ -56,4 +124,14 @@ func BuildCATreeFromIndexFile() (*CATree, error) {
     panic("The hash of root node is nil!")
   }
   return GetCATree(rootHash), nil
+}
+
+func fromCommitObjectToBytes(commit *Commit) ([]byte, error) {
+  return json.Marshal(commit)
+}
+
+func fromBytesToCommitObject(data []byte) (*Commit, error) {
+  var commit Commit
+  err := json.Unmarshal(data, &commit)
+  return &commit, err
 }

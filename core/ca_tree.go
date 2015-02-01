@@ -59,6 +59,11 @@ func (tree *CATree) Traverse(fn VisitFn, root string) error {
   }
 }
 
+// Gets the hash value of root node.
+func (tree *CATree) GetHash() []byte {
+  return tree.root.GetHashValue()
+}
+
 func newCANode(hash []byte) *CANode {
   return &CANode{hash : hash}
 }

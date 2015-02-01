@@ -33,6 +33,9 @@ type Tree interface {
 
   // Traverses the tree structure.  VisitFn will be invoked during traversal.
   Traverse(fn VisitFn, root string) error
+
+  // Get hash value of the root node.
+  GetHash() []byte;
 }
 
 // Node interface.

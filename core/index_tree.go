@@ -61,6 +61,11 @@ func (tree *IndexTree) Traverse(fn VisitFn, root string) error {
   return tree.memTree.Traverse(fn, root)
 }
 
+// See Tree interface.
+func (tree *IndexTree) GetHash() []byte {
+  return tree.memTree.root.GetHashValue()
+}
+
 // Creates a directory in tree.
 func (tree *IndexTree) MkDir(treePath string) (err error) {
   err = tree.memTree.MkDir(treePath)
@@ -79,7 +84,7 @@ func (tree *IndexTree) MkDirAll(treePath string) (err error) {
   return
 }
 
-// Creates a file with given hash value in tree.
+// Creates a file with given hash value in tree. If the file exists then update the file.
 func (tree *IndexTree) MkFile(treePath string, hash []byte) (err error) {
   err = tree.memTree.MkFile(treePath, hash)
   if err == nil {

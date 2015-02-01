@@ -29,6 +29,8 @@ var commandsTable = map[string]cmdStruct {
   "status" : {fun : builtin.CmdStatus, flag : flagNeedSetup},
   "add" : {fun : builtin.CmdAdd, flag : flagNeedSetup},
   "commit" : {fun : builtin.CmdCommit, flag : flagNeedSetup},
+  "branch" : {fun : builtin.CmdBranch, flag : flagNeedSetup},
+  "log" : {fun : builtin.CmdLog, flag : flagNeedSetup},
 }
 
 func runBuiltin(cmd string) {

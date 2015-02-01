@@ -6,6 +6,7 @@ import (
   "crypto/sha1"
   "encoding/hex"
   "errors"
+  "fmt"
   "io/ioutil"
   "os"
   "path/filepath"
@@ -52,7 +53,7 @@ func (store *CAStore) StoreBlob(data []byte) ([]byte, error) {
     return nil, err
   }
   fileName := hex.EncodeToString(hash[:])
-  ioutil.WriteFile(filepath.Join(store.dir, fileName), blob, 0444)
+  store.write(fileName, blob)
   return hash[:], nil
 }
 
@@ -63,17 +64,30 @@ func (store *CAStore) StoreTree(data []byte) ([]byte, error) {
     return nil, err
   }
   fileName := hex.EncodeToString(hash[:])
-  ioutil.WriteFile(filepath.Join(store.dir, fileName), blob, 0444)
+  store.write(fileName, blob)
   return hash[:], nil
 }
 
-// Gets a list of filenames that match the prefix of the hash value.
-func (store *CAStore) GetFileName(hashPrefix []byte) (names []string, err error) {
+// Stores commit data to content-addressable store.
+func (store *CAStore) StoreCommit(data []byte) ([]byte, error) {
+  hash, blob, err := WrapData(CommitType, data)
+  if err != nil {
+    return nil, err
+  }
+  fileName := hex.EncodeToString(hash[:])
+  store.write(fileName, blob)
+  return hash[:], nil
+}
+
+// Gets a list of full hashs that match the prefix of the hash value. The return values can be:
+// 1) a list of hashs, nil
+// 2) undefined, ErrNotValidHash
+func (store *CAStore) GetMatchedHashs(hashPrefix []byte) (hashs [][]byte, err error) {
   if len(hashPrefix) > HashSize {
     err = ErrNotValidHash
     return
   }
-  names = make([]string, 0, 1)
+  hashs = make([][]byte, 0, 1)
   hashString := hex.EncodeToString(hashPrefix)
   walkFun := func(path string, info os.FileInfo, err error) error {
     if info.IsDir() && path != store.dir {
@@ -81,7 +95,10 @@ func (store *CAStore) GetFileName(hashPrefix []byte) (names []string, err error)
     }
     name := info.Name()
     if strings.HasPrefix(name, hashString) {
-      names = append(names, name)
+      if hash, err := hex.DecodeString(name); err != nil {
+      } else {
+        hashs = append(hashs, hash)
+      }
     }
     return nil
   }
@@ -89,54 +106,30 @@ func (store *CAStore) GetFileName(hashPrefix []byte) (names []string, err error)
   return
 }
 
-// Returns the type and data of the file based on the hash prefix.
-func (store *CAStore) GetWithPrefix(hashPrefix []byte) (name string, fileType string, data []byte, err error) {
-  names, err := store.GetFileName(hashPrefix)
-  if err != nil {
-    return
-  }
-  if len(names) > 1 {
-    err = ErrHashTooShort
-    return
-  } else if len(names) == 0 {
-    err = ErrNoMatch
-    return
-  }
-  name = names[0]
-  data, err = ioutil.ReadFile(filepath.Join(store.dir, name))
-  sepIdx := bytes.IndexByte(data, 0)
-  header, data := data[:sepIdx], data[sepIdx + 1:]
-  headers := strings.Split(string(header), " ")
-  fileType = headers[0]
-  length, err := strconv.Atoi(headers[1])
-  if err != nil {
-    return
-  }
-  // sanity check, length field must match the actual length of data.
-  if length != len(data) {
-    err = ErrFileCorrupted
-  }
-  return
-}
-
+// Given the hash value, gets the content stored in CAStore. The return values can be:
+// 1) fileType, data, nil
+// 2) "", nil, ErrNoMatch
 func (store* CAStore) Get(hash []byte) (fileType string, data []byte, err error) {
   fileName := hex.EncodeToString(hash)
   fullPath := filepath.Join(store.dir, fileName)
-  if _, err = os.Stat(fullPath); err == nil {
-    data, err = ioutil.ReadFile(fullPath)
+  if data, err = ioutil.ReadFile(fullPath); err == nil {
+    var header []byte
     sepIdx := bytes.IndexByte(data, 0)
-    header, data := data[:sepIdx], data[sepIdx + 1:]
+    header, data = data[:sepIdx], data[sepIdx + 1:]
     headers := strings.Split(string(header), " ")
     fileType = headers[0]
     length, err := strconv.Atoi(headers[1])
     if err != nil {
-      return "", nil, err
+      fmt.Println("Failed to conver %s to integer.", headers[1])
+      os.Exit(1)
     }
-    // sanity check, length field must match the actual length of data.
+    // Sanity check, length field must match the actual length of data.
     if length != len(data) {
-      err = ErrFileCorrupted
+      fmt.Println("The length is not correct, %s is invalid file", fileName)
+      os.Exit(1)
     }
-    return fileType, data, err
+  } else if os.IsNotExist(err) {
+    err = ErrNoMatch
   }
   return
 }
@@ -148,6 +141,29 @@ func (store *CAStore) Exists(hash []byte) bool {
     return true
   }
   return false
+}
+
+// Write data to CAStore. The fileName is just the hash string.
+func (store *CAStore) write(fileName string, data []byte) {
+  hash := sha1.Sum(data)
+  if fileName != hex.EncodeToString(hash[:]) {
+    // Sanity check, verifies the fileName is correct for the given data.
+    fmt.Println("Hash of the data doesn't match the file name.")
+    os.Exit(1)
+  }
+  fullPath := filepath.Join(store.dir, fileName)
+  if _, err := os.Stat(fullPath); err == nil {
+    // The file has alredy existed.
+    return
+  } else if os.IsNotExist(err) {
+    if err := ioutil.WriteFile(filepath.Join(store.dir, fileName), data, 0444); err != nil {
+      fmt.Println("Failed to write file.")
+      os.Exit(1)
+    }
+  } else {
+    fmt.Printf("Err: %s", err.Error())
+    os.Exit(1)
+  }
 }
 
 func WrapData(fileType string, data []byte) (hash [HashSize]byte, blob []byte, err error) {

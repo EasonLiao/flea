@@ -1,6 +1,7 @@
 package builtin
 
 import (
+  "fmt"
   "github.com/easonliao/flea/core"
   "os"
   "path"
@@ -26,6 +27,7 @@ func add(treePath string) error {
     if hash, err := addFileToStore(treePath); err != nil {
       return err
     } else {
+      fmt.Printf("%x", hash)
       return indextree.MkFileAll(treePath, hash)
     }
   } else {

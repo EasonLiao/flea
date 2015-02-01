@@ -63,6 +63,11 @@ func (mt *MemTree) Traverse(fn VisitFn, root string) error {
   }
 }
 
+// See Tree interface.
+func (mt *MemTree) GetHash() []byte {
+  return mt.root.GetHashValue()
+}
+
 // Creates a directory in tree.
 func (mt *MemTree) MkDir(treePath string) (err error) {
   if treePath == "/" {
@@ -98,7 +103,7 @@ func (mt *MemTree) MkDirAll(treePath string) (err error) {
   return mt.MkDir(treePath)
 }
 
-// Creates a file with given hash value in tree.
+// Creates a file with given hash value in tree. If the file exists then update the file.
 func (mt *MemTree) MkFile(treePath string, hash []byte) (err error) {
   if treePath == "/" {
     err = ErrReadOnlyRoot
@@ -109,11 +114,6 @@ func (mt *MemTree) MkFile(treePath string, hash []byte) (err error) {
   op := func(node *MemTreeNode) (changed bool, ret interface{}, err error) {
     if !node.Dir {
       err = ErrNotDir
-      return
-    }
-    _, ok := node.Children[fileName]
-    if ok {
-      err = ErrNodeAlreadyExist
       return
     }
     node.Children[fileName] = newFileMemTreeNode(hash)

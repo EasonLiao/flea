@@ -5,13 +5,13 @@ import (
   "flag"
   "fmt"
   "github.com/easonliao/flea/core"
-  "log"
   "os"
 )
 
 func CmdCatFile() error {
   if len(os.Args) <= 2 {
-    log.Fatal("Not enough arguments.")
+    fmt.Println("Not enough arguments.")
+    os.Exit(1)
   }
   flags := flag.NewFlagSet("cat-file", 0)
   printType := flags.Bool("t", false, "file type")
@@ -19,17 +19,29 @@ func CmdCatFile() error {
   hashPrefix :=  os.Args[len(os.Args) - 1]
   hash, err := hex.DecodeString(hashPrefix)
   if err != nil {
-    log.Fatal("Invalid hash values.")
+    fmt.Println("Invalid hash values.")
+    os.Exit(1)
   }
   store := core.GetCAStore()
-  _, fileType, data, err := store.GetWithPrefix(hash)
+  hashs, err := store.GetMatchedHashs(hash)
   if err != nil {
-    log.Fatal(err)
+    fmt.Printf("Error: %s\n", err.Error())
+    os.Exit(1)
   }
-  if *printType {
-    fmt.Println(fileType)
-  } else {
-    fmt.Println(string(data))
+  if len(hashs) > 1 {
+    fmt.Printf("More than one file match %s\n", hashPrefix)
+    os.Exit(1)
+  } else if len(hashs) == 1 {
+    fType, data, err := store.Get(hashs[0])
+    if err != nil {
+      fmt.Printf("Error: %s\n", err.Error())
+      os.Exit(1)
+    }
+    if *printType {
+      fmt.Println(fType)
+    } else {
+      fmt.Println(string(data))
+    }
   }
   return nil
 }

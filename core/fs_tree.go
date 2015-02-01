@@ -55,6 +55,12 @@ func (ft *FsTree) Traverse(fn VisitFn, root string) error {
   }
 }
 
+// See Tree interface.
+func (ft *FsTree) GetHash() []byte {
+  node, _ := ft.Get("/")
+  return node.GetHashValue()
+}
+
 type FsTreeNode struct {
   fsPath string
   hash []byte
