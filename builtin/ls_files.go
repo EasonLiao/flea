@@ -7,6 +7,11 @@ import (
   "path/filepath"
 )
 
+func UsageLsFiles() {
+  fmt.Println("Usage: flea ls-files")
+  os.Exit(1)
+}
+
 func CmdLsFiles() error {
   if commit, err := core.GetCurrentCommit(); err == nil {
     tree := commit.GetCATree()

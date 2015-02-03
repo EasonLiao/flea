@@ -9,7 +9,16 @@ import (
   "strings"
 )
 
+func UsageAdd() {
+  fmt.Println("Usage: flea add (<file>|<directory>)")
+  os.Exit(0)
+}
+
 func CmdAdd() error {
+  if len(os.Args) != 3 {
+    fmt.Println("Wrong number of arguments.")
+    UsageAdd()
+  }
   addPath := os.Args[len(os.Args) - 1]
   treePath := filepath.ToSlash(filepath.Join(core.GetPathPrefix(), addPath))
   add(treePath)

@@ -10,13 +10,14 @@ import (
   "sort"
 )
 
-func UsageCheckout() string {
-  return "flea checkout (<branch>|<commit-hash>)"
+func UsageCheckout() {
+  fmt.Println("flea checkout (<branch>|<commit-hash>)")
+  os.Exit(1)
 }
 
 func CmdCheckout() error {
   if len(os.Args) != 3 {
-    PrintAndExit(UsageCheckout())
+    UsageCheckout()
   }
   dest := os.Args[2]
   var commit *core.Commit

@@ -8,10 +8,20 @@ import (
   "os"
 )
 
+func UsageCatFile() {
+  usage :=
+  `Usage: flea cat-file [-t] <object>
+
+  -t: Instead of the content, show the object type identified by <object>
+  `
+  fmt.Println(usage)
+  os.Exit(1)
+}
+
 func CmdCatFile() error {
   if len(os.Args) <= 2 {
     fmt.Println("Not enough arguments.")
-    os.Exit(1)
+    UsageCatFile()
   }
   flags := flag.NewFlagSet("cat-file", 0)
   printType := flags.Bool("t", false, "file type")

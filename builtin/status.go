@@ -3,7 +3,13 @@ package builtin
 import (
   "fmt"
   "github.com/easonliao/flea/core"
+  "os"
 )
+
+func UsageStatus() {
+  fmt.Println("Usage: flea status")
+  os.Exit(1)
+}
 
 func CmdStatus() error {
   idxTree := core.GetIndexTree()

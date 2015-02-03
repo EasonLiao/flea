@@ -9,10 +9,22 @@ import (
   "os/user"
 )
 
+func UsageCommit() {
+  usage :=
+  `Usage: flea commit [-m <msg>] [-a]
+
+  -a: Tell the command to automatically stage files that have been modified and deleted,
+      but new files you have not told Flea  about are not affected.
+  -m: Use the given <msg> as the commit message.
+  `
+  fmt.Println(usage)
+  os.Exit(1)
+}
+
 func CmdCommit() error {
   if len(os.Args) <= 2 {
     fmt.Println("Not enough arguments.")
-    os.Exit(1)
+    UsageCommit()
   }
   flags := flag.NewFlagSet("commit", 0)
   comment := flags.String("m", "No Comment", "comment")

@@ -3,7 +3,13 @@ package builtin
 import (
   "fmt"
   "github.com/easonliao/flea/core"
+  "os"
 )
+
+func UsageLog() {
+  fmt.Println("Usage: flea log")
+  os.Exit(1)
+}
 
 func CmdLog() error {
   commit, err := core.GetCurrentCommit()

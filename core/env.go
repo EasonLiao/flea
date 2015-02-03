@@ -67,7 +67,7 @@ func InitNew() error {
 func InitFromExisting() error {
   cwd, err := os.Getwd()
   if err != nil {
-    return err
+    panic(err.Error())
   }
   curDir := cwd
   for {

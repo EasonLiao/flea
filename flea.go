@@ -20,29 +20,46 @@ const (
 type cmdStruct struct {
   fun func() error
   flag int
+  usage func()
 }
 
 var commandsTable = map[string]cmdStruct {
-  "init" : {fun : builtin.CmdInit},
+  "init" : {fun : builtin.CmdInit, usage: builtin.UsageInit},
   "hash-object" : {fun : builtin.CmdHashObject, flag : flagNeedSetup},
-  "cat-file" : {fun : builtin.CmdCatFile, flag : flagNeedSetup},
-  "status" : {fun : builtin.CmdStatus, flag : flagNeedSetup},
-  "add" : {fun : builtin.CmdAdd, flag : flagNeedSetup},
-  "commit" : {fun : builtin.CmdCommit, flag : flagNeedSetup},
-  "branch" : {fun : builtin.CmdBranch, flag : flagNeedSetup},
-  "log" : {fun : builtin.CmdLog, flag : flagNeedSetup},
-  "checkout" : {fun : builtin.CmdCheckout, flag : flagNeedSetup},
-  "ls-files" : {fun : builtin.CmdLsFiles, flag : flagNeedSetup},
+  "cat-file" : {fun : builtin.CmdCatFile, flag : flagNeedSetup, usage: builtin.UsageCatFile},
+  "status" : {fun : builtin.CmdStatus, flag : flagNeedSetup, usage: builtin.UsageStatus},
+  "add" : {fun : builtin.CmdAdd, flag : flagNeedSetup, usage: builtin.UsageAdd},
+  "commit" : {fun : builtin.CmdCommit, flag : flagNeedSetup, usage: builtin.UsageCommit},
+  "branch" : {fun : builtin.CmdBranch, flag : flagNeedSetup, usage: builtin.UsageBranch},
+  "log" : {fun : builtin.CmdLog, flag : flagNeedSetup, usage: builtin.UsageLog},
+  "checkout" : {fun : builtin.CmdCheckout, flag : flagNeedSetup, usage: builtin.UsageCheckout},
+  "ls-files" : {fun : builtin.CmdLsFiles, flag : flagNeedSetup, usage: builtin.UsageLsFiles},
+}
+
+func usage() {
+  usage := "Here are a list of commands, see usage for specific command please use: flea <command> -h\n"
+  fmt.Println(usage)
+  for command, _ := range(commandsTable) {
+    fmt.Printf("\t%s\n", command)
+  }
+  fmt.Println("")
 }
 
 func runBuiltin(cmd string) {
   if cmdSt, ok := commandsTable[cmd]; !ok {
     log.Fatal("Unkown command")
   } else {
+    options := make(map[string]bool)
+    for _, opt := range(os.Args[2:]) {
+      options[opt] = true
+    }
+    if _, ok := options["-h"]; ok {
+      cmdSt.usage()
+    }
     if cmdSt.flag & flagNeedSetup != 0 {
       err := core.InitFromExisting()
-      if err != nil {
-        fmt.Println(err.Error())
+      if err == core.ErrNoFleaDir {
+        log.Fatal("Not a flea repository(or any of the parent directories):.flea")
       }
     }
     err := cmdSt.fun()
@@ -60,6 +77,6 @@ func main() {
   if (len(os.Args) > 1 && !strings.HasPrefix(os.Args[1], "-")) {
     runBuiltin(os.Args[1])
   } else {
-    log.Println("Else")
+    usage()
   }
 }
