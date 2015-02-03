@@ -106,6 +106,12 @@ func (tree *IndexTree) Delete(treePath string) (err error) {
   return
 }
 
+// See MemTree.
+func (tree *IndexTree) Clear() {
+  tree.memTree.Clear()
+  tree.flush()
+}
+
 // Fluses the in-memory data of index tree to index file.
 func (tree *IndexTree) flush() error {
   data, err := tree.memTree.Serialize()

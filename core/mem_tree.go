@@ -160,6 +160,11 @@ func (mt *MemTree) Delete(treePath string) (err error) {
   return
 }
 
+// Clear all the nodes except the root node.
+func (mt *MemTree) Clear() {
+  mt.root = newDirMemTreeNode()
+}
+
 func (mt *MemTree) mkdirAll(dir string) error {
   if node, err := mt.Get(dir); err == nil {
     // dir already exists.

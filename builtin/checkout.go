@@ -1,6 +1,7 @@
 package builtin
 
 import (
+  "bytes"
   "encoding/hex"
   "fmt"
   "io/ioutil"
@@ -87,12 +88,21 @@ func deleteAllFilesInCurrentCommit() {
 }
 
 func restoreRepoFromCommit(commit *core.Commit) {
+  idxTree := core.GetIndexTree()
+  // Clears the index tree.
+  idxTree.Clear()
   restore := func(treePath string, node core.Node) error {
     fsPath := filepath.Join(core.GetRepoDirectory(), TreePathToRelFsPath(treePath))
     if node.IsDir() {
+      // Restores to index file.
+      idxTree.MkDir(treePath)
+      // Restores to working directory.
       os.Mkdir(fsPath, 0777)
     } else {
       data, _  := node.GetData()
+      // Restores to index file.
+      idxTree.MkFile(treePath, node.GetHashValue())
+      // Restores to working directory.
       err := ioutil.WriteFile(fsPath, data, 0666)
       return err
     }
@@ -101,5 +111,9 @@ func restoreRepoFromCommit(commit *core.Commit) {
   err := commit.GetCATree().Traverse(restore, "/")
   if err != nil {
     fmt.Println("warning:", err.Error())
+  }
+  // Sanity check, after restore the hash of the index tree should match the commit tree.
+  if bytes.Compare(idxTree.GetHash(), commit.GetCATree().GetHash()) != 0 {
+    panic("After checkout the hash of commit tree doesn't match the hash of index tree.")
   }
 }

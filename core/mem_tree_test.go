@@ -110,6 +110,13 @@ func TestMemTree(t *testing.T) {
   if len(m1) != 0 || len(m2) != 0 || len(diffes) != 0 {
     t.Error("Inconsistency between two trees.")
   }
+
+  // Tests clear.
+  treeA.Clear()
+  node, _ := treeA.Get("/")
+  if len(node.GetChildren()) != 0 {
+    t.Error("Error in clear")
+  }
 }
 
 func TestTraversal(t *testing.T) {
