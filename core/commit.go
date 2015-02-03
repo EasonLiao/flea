@@ -94,13 +94,7 @@ func CreateCommitObject(tree, prevCommit []byte, author, comment string) ([]byte
 func BuildCATreeFromIndexFile() (*CATree, error) {
   idxTree := GetIndexTree()
   caStore := GetCAStore()
-  root, _ := idxTree.Get("/")
   var rootHash []byte
-
-  // Checks whether the index tree is empty.
-  if bytes.Compare(root.GetHashValue(), EmptyDirHash[:]) == 0 {
-    return nil, ErrEmptyTree
-  }
 
   // Traverse the index tree and stores all the dir nodes to CAStore, it will also verify
   // that file nodes have already existed in CAStore.
@@ -128,7 +122,7 @@ func BuildCATreeFromIndexFile() (*CATree, error) {
     return nil
   }
 
-  err := indexTree.Traverse(storeFn, "/")
+  err := idxTree.Traverse(storeFn, "/")
   if err != nil {
     return nil, err
   }

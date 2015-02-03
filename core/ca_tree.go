@@ -111,6 +111,10 @@ func (node *CANode) GetChildren() map[string]Node {
   if fType !=  TreeType {
     log.Fatal(ErrNotFile.Error())
   }
+  if len(data) == 0 {
+    // It's possible the directory is empty.
+    return make(map[string]Node)
+  }
   children := make(map[string]Node)
   dirString := string(data)
   rows := strings.Split(dirString, "\n")

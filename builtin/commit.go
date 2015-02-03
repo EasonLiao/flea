@@ -51,10 +51,6 @@ func CmdCommit() error {
   // Creats a CATree from staging area.
   caTree, err := core.BuildCATreeFromIndexFile()
   if err != nil {
-    if err == core.ErrEmptyTree {
-      fmt.Println("The staging area is empty.")
-      os.Exit(1)
-    }
     fmt.Printf("Failed to build CATree from staging area: %s\n", err.Error())
     os.Exit(1)
   }

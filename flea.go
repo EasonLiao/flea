@@ -24,16 +24,17 @@ type cmdStruct struct {
 }
 
 var commandsTable = map[string]cmdStruct {
-  "init" : {fun : builtin.CmdInit, usage: builtin.UsageInit},
+  "init"        : {fun : builtin.CmdInit, usage: builtin.UsageInit},
   "hash-object" : {fun : builtin.CmdHashObject, flag : flagNeedSetup},
-  "cat-file" : {fun : builtin.CmdCatFile, flag : flagNeedSetup, usage: builtin.UsageCatFile},
-  "status" : {fun : builtin.CmdStatus, flag : flagNeedSetup, usage: builtin.UsageStatus},
-  "add" : {fun : builtin.CmdAdd, flag : flagNeedSetup, usage: builtin.UsageAdd},
-  "commit" : {fun : builtin.CmdCommit, flag : flagNeedSetup, usage: builtin.UsageCommit},
-  "branch" : {fun : builtin.CmdBranch, flag : flagNeedSetup, usage: builtin.UsageBranch},
-  "log" : {fun : builtin.CmdLog, flag : flagNeedSetup, usage: builtin.UsageLog},
-  "checkout" : {fun : builtin.CmdCheckout, flag : flagNeedSetup, usage: builtin.UsageCheckout},
-  "ls-files" : {fun : builtin.CmdLsFiles, flag : flagNeedSetup, usage: builtin.UsageLsFiles},
+  "cat-file"    : {fun : builtin.CmdCatFile, flag : flagNeedSetup, usage: builtin.UsageCatFile},
+  "status"      : {fun : builtin.CmdStatus, flag : flagNeedSetup, usage: builtin.UsageStatus},
+  "add"         : {fun : builtin.CmdAdd, flag : flagNeedSetup, usage: builtin.UsageAdd},
+  "commit"      : {fun : builtin.CmdCommit, flag : flagNeedSetup, usage: builtin.UsageCommit},
+  "branch"      : {fun : builtin.CmdBranch, flag : flagNeedSetup, usage: builtin.UsageBranch},
+  "log"         : {fun : builtin.CmdLog, flag : flagNeedSetup, usage: builtin.UsageLog},
+  "checkout"    : {fun : builtin.CmdCheckout, flag : flagNeedSetup, usage: builtin.UsageCheckout},
+  "ls-files"    : {fun : builtin.CmdLsFiles, flag : flagNeedSetup, usage: builtin.UsageLsFiles},
+  "rm"          : {fun : builtin.CmdRm, flag : flagNeedSetup, usage: builtin.UsageRm},
 }
 
 func usage() {

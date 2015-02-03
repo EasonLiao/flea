@@ -144,7 +144,7 @@ func (mt *MemTree) Delete(treePath string) (err error) {
   dir := path.Dir(treePath)
   op := func(node *MemTreeNode) (changed bool, ret interface{}, err error) {
     if !node.Dir {
-      err = ErrNotDir
+      err = ErrPathNotExist
       return
     }
     _, ok := node.Children[nodeName]
