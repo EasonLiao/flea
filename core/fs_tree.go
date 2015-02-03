@@ -108,6 +108,9 @@ func (n *FsTreeNode) GetChildren() map[string]Node {
     if name == "." {
       return nil
     }
+    if name == ".flea" {
+      return filepath.SkipDir
+    }
     relPath, err := filepath.Rel(n.tree.baseFsPath, fsPath)
     if err != nil {
       return err
