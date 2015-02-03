@@ -1,8 +1,6 @@
 package core
 
 import (
-  "io/ioutil"
-  "os"
   "path/filepath"
 )
 
@@ -28,26 +26,22 @@ func GetIndexTree() *IndexTree {
 }
 
 func newIndexTree(filePath string) (*IndexTree, error) {
-  if _, err := os.Stat(filePath); err == nil {
+  var err error
+  if exists(filePath) {
     // The index file already exists.
-    data, err := ioutil.ReadFile(filePath)
-    if err != nil {
-      return nil, err
-    }
+    data, _ := read(filePath)
     // Restores the data to MemTree.
     memTree, err := Deserialize(data)
     if err != nil {
       return nil, err
     }
     return &IndexTree{filePath, memTree}, nil
-  } else if os.IsNotExist(err) {
+  } else {
     // The index file doesn't exist.
     memTree := NewMemTree()
     tree := &IndexTree{filePath, memTree}
     err = tree.flush()
     return tree, err
-  } else {
-    return nil, err
   }
 }
 
@@ -116,7 +110,7 @@ func (tree *IndexTree) Delete(treePath string) (err error) {
 func (tree *IndexTree) flush() error {
   data, err := tree.memTree.Serialize()
   if err == nil {
-    err = ioutil.WriteFile(tree.indexFile, data, 0664)
+    err = write(tree.indexFile, data)
   }
   return err
 }

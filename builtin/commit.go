@@ -2,12 +2,22 @@ package builtin
 
 import (
   "bytes"
+  "flag"
   "fmt"
   "github.com/easonliao/flea/core"
   "os"
+  "os/user"
 )
 
 func CmdCommit() error {
+  if len(os.Args) <= 2 {
+    fmt.Println("Not enough arguments.")
+    os.Exit(1)
+  }
+  flags := flag.NewFlagSet("commit", 0)
+  comment := flags.String("m", "No Comment", "comment")
+  flags.Parse(os.Args[2:])
+
   indexTree := core.GetIndexTree()
   commit, err := core.GetCurrentCommit()
 
@@ -29,7 +39,11 @@ func CmdCommit() error {
   // Creats a CATree from staging area.
   caTree, err := core.BuildCATreeFromIndexFile()
   if err != nil {
-    fmt.Printf("Failed to build CATree from staging area: %s", err.Error())
+    if err == core.ErrEmptyTree {
+      fmt.Println("The staging area is empty.")
+      os.Exit(1)
+    }
+    fmt.Printf("Failed to build CATree from staging area: %s\n", err.Error())
     os.Exit(1)
   }
 
@@ -39,8 +53,12 @@ func CmdCommit() error {
     commitHash = commit.GetCommitHash()
   }
 
+  var username string = "unknown"
+  if user, err := user.Current(); err == nil {
+    username = user.Username
+  }
   // Creates a commit object.
-  hash, err := core.CreateCommitObject(caTree.GetHash(), commitHash, "yisheng", "hello")
+  hash, err := core.CreateCommitObject(caTree.GetHash(), commitHash, username, *comment)
 
   if err != nil {
     fmt.Printf("Failed to create the commit object: %s", err.Error())

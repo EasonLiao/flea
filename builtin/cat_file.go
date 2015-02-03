@@ -23,11 +23,7 @@ func CmdCatFile() error {
     os.Exit(1)
   }
   store := core.GetCAStore()
-  hashs, err := store.GetMatchedHashs(hash)
-  if err != nil {
-    fmt.Printf("Error: %s\n", err.Error())
-    os.Exit(1)
-  }
+  hashs := store.GetMatchedHashs(hash)
   if len(hashs) > 1 {
     fmt.Printf("More than one file match %s\n", hashPrefix)
     os.Exit(1)

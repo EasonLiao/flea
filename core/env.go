@@ -3,7 +3,6 @@ package core
 import (
   "encoding/hex"
   "errors"
-  "io/ioutil"
   "log"
   "os"
   "path/filepath"
@@ -15,11 +14,12 @@ var (
   ErrFleaDirExist = errors.New("core: .flea dir has already existed in current directory.")
   ErrNoHeadFile = errors.New("core: HEAD file doesn't exist")
   ErrNotBranch = errors.New("core: not in a valid branch")
+  ErrInvalidBranch = errors.New("core: Invalid branch")
 )
 
 var (
   initialized = false
-  workingDirectory = ""
+  repoDirectory = ""
   fleaDirectory = ""
   storeDirectory = ""
   pathPrefix = ""
@@ -29,17 +29,17 @@ var (
 
 func initPaths(wd string) {
   cd, _ := os.Getwd()
-  workingDirectory = wd
-  fleaDirectory = filepath.Join(workingDirectory, ".flea")
+  repoDirectory = wd
+  fleaDirectory = filepath.Join(repoDirectory, ".flea")
   storeDirectory = filepath.Join(fleaDirectory, "objects")
-  pathPrefix, _ = filepath.Rel(workingDirectory, cd)
+  pathPrefix, _ = filepath.Rel(repoDirectory, cd)
   if pathPrefix == "." {
     pathPrefix = ""
   }
   pathPrefix = "/" + pathPrefix
   headFilePath = filepath.Join(fleaDirectory, "HEAD")
   branchHeadDir = filepath.Join(fleaDirectory, filepath.Join("refs", "heads"))
-  // log.Println(workingDirectory, fleaDirectory, storeDirectory, pathPrefix)
+  // log.Println(repoDirectory, fleaDirectory, storeDirectory, pathPrefix)
   initialized = true
 }
 
@@ -51,11 +51,8 @@ func InitNew() error {
     return err
   }
   fd := filepath.Join(cwd, ".flea")
-  if _, err := os.Stat(fd); err == nil {
-    err = ErrFleaDirExist
-    return err
-  } else if ! os.IsNotExist(err) {
-    return err
+  if exists(fd) {
+    return ErrFleaDirExist
   }
   os.Mkdir(fd, os.ModeDir | 0777)
   os.Mkdir(filepath.Join(fd, "objects"), os.ModeDir | 0777)
@@ -74,7 +71,7 @@ func InitFromExisting() error {
   }
   curDir := cwd
   for {
-    if _, err := os.Stat(filepath.Join(curDir, ".flea")); err != nil {
+    if !exists(filepath.Join(curDir, ".flea")) {
       prevDir := curDir
       curDir = filepath.Dir(curDir)
       if prevDir == curDir {
@@ -88,10 +85,10 @@ func InitFromExisting() error {
   return nil
 }
 
-// Get the root working directory of current Flea repository.
-func GetWorkingDirectory() string {
+// Get the root directory of current Flea repository.
+func GetRepoDirectory() string {
   assertInit()
-  return workingDirectory
+  return repoDirectory
 }
 
 // Get the full path of .flea directory of current Flea repository.
@@ -123,21 +120,18 @@ func GetBranchHeadDir() string {
 // 2) empty branch and ErrNoHeadFile.
 // 3) empty branch and ErrNotBranch.
 func GetCurrentBranch() (branch string, err error) {
-  data, err := ioutil.ReadFile(getHeadFilePath())
+  if !exists(getHeadFilePath()) {
+    err = ErrNoHeadFile
+    return
+  }
+  data, _ := read(getHeadFilePath())
   content := string(data)
-  if err == nil {
-    if strings.HasPrefix(content, "ref:") {
+  if strings.HasPrefix(content, "ref:") {
       // It contains a link to branch name.
       branch = content[len("ref:"):]
-    } else {
-      // It contains a hash value of the commit object.
-      err = ErrNotBranch
-    }
-  } else if os.IsNotExist(err) {
-    // There's no HEAD file.
-    err = ErrNoHeadFile
   } else {
-    log.Fatal("Error in reading file %s", getHeadFilePath())
+    // It contains a hash value of the commit object.
+    err = ErrNotBranch
   }
   return
 }
@@ -150,13 +144,13 @@ func GetCurrentCommit() (*Commit, error) {
   var commitHash []byte
   if err == nil {
     // Now we're in a valid branch, gets the commit hash from branch file.
-    commitHash, err = ioutil.ReadFile(filepath.Join(GetBranchHeadDir(), branch))
+    commitHash, err = read(filepath.Join(GetBranchHeadDir(), branch))
     if err != nil {
       log.Fatalf("Can't read the branch file %s.", branch)
     }
   } else if err ==  ErrNotBranch {
     // We're not in a branch, getting the current position from HEAD file.
-    commitHash, err = ioutil.ReadFile(getHeadFilePath())
+    commitHash, err = read(getHeadFilePath())
     if err != nil {
       log.Fatal("Can't read the HEAD file.")
     }
@@ -181,16 +175,44 @@ func GetCurrentCommit() (*Commit, error) {
   return commit, nil
 }
 
-func WriteHeadFile(data []byte) {
-  if err := ioutil.WriteFile(getHeadFilePath(), data, 0777); err != nil {
-    panic("Failed to write to HEAD file.")
+// Gets the hash of the HEAD of a branch.
+func GetBranchHead(branch string) []byte {
+  if !IsValidBranch(branch) {
+    log.Fatalf("%s is not a valid branch.\n", branch)
   }
+  head, _ := read(filepath.Join(GetBranchHeadDir(), branch))
+  hash, err := hex.DecodeString(string(head))
+  if err != nil {
+    panic(err.Error())
+  }
+  if !GetCAStore().Exists(hash) {
+    log.Fatalf("%x doesn't exist in repo\n", hash)
+  }
+  return hash
+}
+
+// Updates the head commit of a the branch.
+func UpdateBranchHead(branch string, commitHash []byte) {
+  if !GetCAStore().Exists(commitHash) {
+    panic("Not a valid commit hash.")
+  }
+  hashString := hex.EncodeToString(commitHash)
+  write(filepath.Join(GetBranchHeadDir(), branch), []byte(hashString))
+}
+
+// Updates the HEAD file.
+func WriteHeadFile(data []byte) {
+  write(getHeadFilePath(), data)
 }
 
 // Checks whether a branch is valid or not.
 func IsValidBranch(branch string) bool {
-  if _, err := os.Stat(filepath.Join(GetBranchHeadDir(), branch)); err == nil {
-    return true
+  if head, err := read(filepath.Join(GetBranchHeadDir(), branch)); err == nil {
+    if hash, err := hex.DecodeString(string(head)); err == nil {
+      if GetCAStore().Exists(hash) {
+        return true
+      }
+    }
   }
   return false
 }

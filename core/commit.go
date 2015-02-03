@@ -2,12 +2,9 @@ package core
 
 import (
   "bytes"
-  "encoding/hex"
   "encoding/json"
   "errors"
-  "io/ioutil"
   "log"
-  "path/filepath"
 )
 
 var (
@@ -15,6 +12,7 @@ var (
   ErrFileNotInCaStore = errors.New("core: file is not in CAStore")
 )
 
+// Commit object.
 type Commit struct {
   Tree        []byte  `json:tree`
   PrevCommit  []byte  `json:prev`
@@ -22,6 +20,7 @@ type Commit struct {
   Comment     string  `json:comment`
 }
 
+// Gets the ancestor commit of this commit object, returns nil if there's no ancestor.
 func (c *Commit) GetPrevCommit() *Commit {
   if c.PrevCommit == nil {
     // No ancester commit object.
@@ -41,6 +40,7 @@ func (c *Commit) GetPrevCommit() *Commit {
   return commit
 }
 
+// Gets the hash value of this commit.
 func (c* Commit) GetCommitHash() []byte {
   data, err := fromCommitObjectToBytes(c)
   if err != nil {
@@ -48,6 +48,29 @@ func (c* Commit) GetCommitHash() []byte {
   }
   hash, _, _ := WrapData(CommitType, data)
   return hash[:]
+}
+
+// Gets the CATree of this commit.
+func (c* Commit) GetCATree() Tree {
+  return GetCATree(c.Tree)
+}
+
+// Returns the Commit object of the given hash. The return values can be:
+// 1) Commit object and nil
+// 2) nil and ErrNoMatch if the hash doesn't exist.
+func GetCommitObject(hash []byte) (*Commit, error) {
+  fType, data, err := GetCAStore().Get(hash)
+  if err == ErrNoMatch {
+    return nil, err
+  }
+  if fType != CommitType {
+    panic("Not commit type.")
+  }
+  commit, err := fromBytesToCommitObject(data)
+  if err != nil {
+    panic(err.Error())
+  }
+  return commit, nil
 }
 
 // Creates a commit object in CAStore.
@@ -65,17 +88,6 @@ func CreateCommitObject(tree, prevCommit []byte, author, comment string) ([]byte
     return nil, err
   }
   return GetCAStore().StoreCommit(data)
-}
-
-// Updates the head commit of a the branch.
-func UpdateBranchHead(branch string, commitHash []byte) {
-  if !GetCAStore().Exists(commitHash) {
-    panic("Not a valid commit hash.")
-  }
-  hashString := hex.EncodeToString(commitHash)
-  if err := ioutil.WriteFile(filepath.Join(GetBranchHeadDir(), branch), []byte(hashString), 0777); err != nil {
-    panic("Failed to update the head of the branch." + err.Error())
-  }
 }
 
 // Builds a CATree from the staging area.

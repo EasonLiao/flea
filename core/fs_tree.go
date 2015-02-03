@@ -1,7 +1,6 @@
 package core
 
 import (
-  "io/ioutil"
   "os"
   "path/filepath"
 )
@@ -18,7 +17,7 @@ type FsTree struct {
 // Gets the singleton FsTree.
 func GetFsTree() *FsTree {
   if fsTree == nil {
-    fsTree = newFsTree(GetWorkingDirectory())
+    fsTree = newFsTree(GetRepoDirectory())
   }
   return fsTree
 }
@@ -82,7 +81,7 @@ func (n *FsTreeNode) GetHashValue() []byte {
     n.hash = hash[:]
   } else {
     // If it's a file, the hash value is the hash value of the file.
-    data, err := ioutil.ReadFile(n.fsPath)
+    data, err := read(n.fsPath)
     if err != nil {
       panic("Error while reading file " + n.fsPath)
     }
@@ -133,15 +132,12 @@ func (n *FsTreeNode) GetData() ([]byte, error) {
   if n.IsDir() {
     return nil, ErrNotFile
   }
-  data, err := ioutil.ReadFile(n.fsPath)
+  data, err := read(n.fsPath)
   return data, err
 }
 
 func (n *FsTreeNode) IsExist() bool {
-  if _, err := os.Stat(n.fsPath); err == nil {
-    return true
-  }
-  return false
+  return exists(n.fsPath)
 }
 
 func (n *FsTreeNode) String() string {

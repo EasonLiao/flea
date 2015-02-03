@@ -7,7 +7,6 @@ import (
   "encoding/hex"
   "errors"
   "fmt"
-  "io/ioutil"
   "os"
   "path/filepath"
   "strconv"
@@ -82,11 +81,7 @@ func (store *CAStore) StoreCommit(data []byte) ([]byte, error) {
 // Gets a list of full hashs that match the prefix of the hash value. The return values can be:
 // 1) a list of hashs, nil
 // 2) undefined, ErrNotValidHash
-func (store *CAStore) GetMatchedHashs(hashPrefix []byte) (hashs [][]byte, err error) {
-  if len(hashPrefix) > HashSize {
-    err = ErrNotValidHash
-    return
-  }
+func (store *CAStore) GetMatchedHashs(hashPrefix []byte) (hashs [][]byte) {
   hashs = make([][]byte, 0, 1)
   hashString := hex.EncodeToString(hashPrefix)
   walkFun := func(path string, info os.FileInfo, err error) error {
@@ -112,7 +107,7 @@ func (store *CAStore) GetMatchedHashs(hashPrefix []byte) (hashs [][]byte, err er
 func (store* CAStore) Get(hash []byte) (fileType string, data []byte, err error) {
   fileName := hex.EncodeToString(hash)
   fullPath := filepath.Join(store.dir, fileName)
-  if data, err = ioutil.ReadFile(fullPath); err == nil {
+  if data, err = read(fullPath); err == nil {
     var header []byte
     sepIdx := bytes.IndexByte(data, 0)
     header, data = data[:sepIdx], data[sepIdx + 1:]
@@ -128,7 +123,7 @@ func (store* CAStore) Get(hash []byte) (fileType string, data []byte, err error)
       fmt.Println("The length is not correct, %s is invalid file", fileName)
       os.Exit(1)
     }
-  } else if os.IsNotExist(err) {
+  } else {
     err = ErrNoMatch
   }
   return
@@ -137,10 +132,7 @@ func (store* CAStore) Get(hash []byte) (fileType string, data []byte, err error)
 // Given a hash value, returns true if a file with the given hash exists in store.
 func (store *CAStore) Exists(hash []byte) bool {
   fileName := hex.EncodeToString(hash)
-  if _, err := os.Stat(filepath.Join(store.dir, fileName)); err == nil {
-    return true
-  }
-  return false
+  return exists(filepath.Join(store.dir, fileName))
 }
 
 // Write data to CAStore. The fileName is just the hash string.
@@ -152,17 +144,11 @@ func (store *CAStore) write(fileName string, data []byte) {
     os.Exit(1)
   }
   fullPath := filepath.Join(store.dir, fileName)
-  if _, err := os.Stat(fullPath); err == nil {
+  if exists(fullPath) {
     // The file has alredy existed.
     return
-  } else if os.IsNotExist(err) {
-    if err := ioutil.WriteFile(filepath.Join(store.dir, fileName), data, 0444); err != nil {
-      fmt.Println("Failed to write file.")
-      os.Exit(1)
-    }
   } else {
-    fmt.Printf("Err: %s", err.Error())
-    os.Exit(1)
+    write(filepath.Join(store.dir, fileName), data)
   }
 }
 
