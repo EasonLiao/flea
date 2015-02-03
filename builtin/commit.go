@@ -7,11 +7,12 @@ import (
   "github.com/easonliao/flea/core"
   "os"
   "os/user"
+  "sort"
 )
 
 func UsageCommit() {
   usage :=
-  `Usage: flea commit [-m <msg>] [-a]
+  `Usage: flea commit [-a] [-m <msg>]
 
   -a: Tell the command to automatically stage files that have been modified and deleted,
       but new files you have not told Flea  about are not affected.
@@ -28,11 +29,62 @@ func CmdCommit() error {
   }
   flags := flag.NewFlagSet("commit", 0)
   comment := flags.String("m", "No Comment", "comment")
+  all := flags.Bool("a", false, "all")
   flags.Parse(os.Args[2:])
 
-  indexTree := core.GetIndexTree()
-  commit, err := core.GetCurrentCommit()
+  branch, err := core.GetCurrentBranch()
+  if err == core.ErrNotBranch {
+    // We're in non-branch, can't commit anything.
+    fmt.Println("Can't commit in a non-branch.")
+    os.Exit(1)
+  }
 
+  indexTree := core.GetIndexTree()
+
+  if *all {
+    // -a option is specified, we need to add all the modified/deleted files in working
+    // directory to index tree.
+    fsTree := core.GetFsTree()
+    modifiedMap := make(map[string][]byte)
+    deletedPaths := make([]string, 0)
+    fn := func(treePath string, node core.Node) error {
+      peerNode, err := fsTree.Get(treePath)
+      if err == core.ErrPathNotExist {
+        // The file has been deleted.
+        deletedPaths = append(deletedPaths, treePath)
+      } else if !node.IsDir() {
+        if bytes.Compare(node.GetHashValue(), peerNode.GetHashValue()) != 0 {
+          // The file has been modified.
+          modifiedMap[treePath] = peerNode.GetHashValue()
+        }
+      }
+      return nil
+    }
+
+    indexTree.Traverse(fn, "/")
+    // Sorts the path in descending order so we'll delete files/dirs in reverse order of
+    // the namespace hierarchy.
+    sort.Sort(sort.Reverse(sort.StringSlice(deletedPaths)))
+    for treePath, hash := range(modifiedMap) {
+      retHash, err := addFileToStore(treePath)
+      if err != nil {
+        panic(err.Error())
+      }
+      if bytes.Compare(retHash, hash) != 0 {
+        panic("The hashs don't match")
+      }
+      if err := indexTree.MkFile(treePath, hash); err != nil {
+        panic(err.Error())
+      }
+    }
+    for _, treePath := range(deletedPaths) {
+      if err := indexTree.Delete(treePath); err != nil {
+        panic(err.Error())
+      }
+    }
+  }
+
+  commit, err := core.GetCurrentCommit()
   if err == nil {
     if bytes.Compare(commit.Tree, indexTree.GetHash()) == 0 {
       // Compares the hash of the commit tree in to the hash of the index tree, if they
@@ -40,12 +92,6 @@ func CmdCommit() error {
       fmt.Println("There's nothing to commit")
       os.Exit(0)
     }
-  }
-  branch, err := core.GetCurrentBranch()
-  if err == core.ErrNotBranch {
-    // We're in non-branch, can't commit anything.
-    fmt.Printf("Can't commit in a non-branch.")
-    os.Exit(1)
   }
 
   // Creats a CATree from staging area.
