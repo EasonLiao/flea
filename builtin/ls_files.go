@@ -17,9 +17,10 @@ func CmdLsFiles() error {
     tree := commit.GetCATree()
     filepaths := make([]string, 0)
     fn := func(treePath string, node core.Node) error {
-      if !node.IsDir() {
-        filepaths = append(filepaths, treePath)
+      if treePath == "/" {
+        return nil
       }
+      filepaths = append(filepaths, treePath)
       return nil
     }
     tree.Traverse(fn, "/")
